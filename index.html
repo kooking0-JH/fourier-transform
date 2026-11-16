@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>푸리에 변환 · 그래프를 원에 감아 진동수를 찾는 기계</title>
+<meta name="description" content="신호 그래프를 원에 감고 무게중심을 찍는 실험에서 출발해 푸리에 변환 공식까지 쌓아 올리고, 수신기·워터폴·대역폭·측파대·노치 필터로 무선과 잇는 해설">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+:root{
+  color-scheme: light;
+  --bg:#ffffff;
+  --screen:#f5f7fa;
+  --line:#dde3ec;
+  --muted:#5f6b7d;
+  --soft:#2f3a4a;
+  --fg:#141b26;
+  --pi:#c2185b;
+  --f:#8f5b00;
+  --w:#00747f;
+  --j:#5e35b1;
+  --r:#16794f;
+  --l:#c25100;
+  --c:#1f63c6;
+  --btn:#1d2d44;
+  --btn-hover:#2f4668;
+  --btn-shadow:#b9c3d2;
+  --font-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-math:"Times New Roman", "STIX Two Math", serif;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.75;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:0 48px}
+main{max-width:760px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;line-height:1.35;margin:0}
+p{margin:0}
+a{color:var(--w)}
+strong{color:var(--fg)}
+.hero{padding-block:56px 28px;display:grid;gap:18px;text-align:center}
+.eyebrow{font-size:13px;letter-spacing:.08em;color:var(--muted)}
+.hero h1{font-size:clamp(26px,5vw,36px);font-weight:700}
+.hero .lede{color:var(--soft);max-width:58ch;margin:0 auto}
+.qs{display:grid;gap:6px;justify-content:center;padding:0;margin:0;list-style:none;color:var(--fg);font-weight:600}
+.qs li::before{content:"Q. ";color:var(--muted);font-weight:400}
+.cast{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:0;margin:6px 0 0;list-style:none}
+.cast-label{font-size:13px;color:var(--muted);margin-top:4px}
+.cast a{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--muted);border-radius:999px;color:var(--fg);background:var(--line);text-decoration:none;font-size:14px;font-weight:600;box-shadow:0 2px 0 var(--btn-shadow);transition:background .15s, transform .08s}
+.cast a::after{content:"↓";font-size:12px;color:var(--soft)}
+.cast a:hover,.cast a:focus-visible{background:#cfd8e5;border-color:var(--fg)}
+.cast a:active{transform:translateY(2px);box-shadow:none}
+.scene{display:grid;gap:18px;padding-block:44px;border-top:1px solid var(--line)}
+.tag{font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;color:var(--muted)}
+.scene h2{font-size:clamp(21px,3.6vw,26px);font-weight:700}
+.ask{font-size:17px;font-weight:600;color:var(--fg);padding-left:14px;border-left:3px solid var(--muted)}
+.prose{display:grid;gap:12px;max-width:65ch;color:var(--soft)}
+.math{overflow-x:auto;overflow-y:hidden;padding-block:4px;color:var(--fg)}
+.item{display:grid;gap:16px;padding-top:22px}
+.item+.item{border-top:1px dashed var(--line);margin-top:14px;padding-top:30px}
+.item h3{font-size:19px;font-weight:700}
+.item h3 .no{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--muted);margin-right:10px}
+/* 교과서 단원 표시: 누를 수 없는 꼬리표. 버튼(진한 바탕·그림자)과 목차 링크(테두리·화살표)와 구분되도록 테두리·그림자 없이 왼쪽 띠만 둡니다. */
+.units{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:12.5px;color:var(--muted)}
+.units .lbl{margin-right:2px}
+.unit{display:inline-flex;align-items:baseline;gap:6px;padding:1px 9px 1px 7px;background:#f1eef8;border-left:3px solid var(--j);border-radius:0 3px 3px 0;color:var(--soft);cursor:default;line-height:1.6}
+.unit b{font-weight:700;color:var(--fg)}
+.unit.out{background:#eef1f5;border-left-color:var(--muted)}
+.stage{background:var(--screen);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.stage canvas{display:block;width:100%;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);font-size:14px}
+.controls label{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.controls input[type=range]{width:min(200px,52vw);accent-color:var(--fg)}
+button{font:inherit;font-size:14px;font-weight:600;line-height:1.2;color:var(--bg);background:var(--btn);border:0;border-radius:6px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 0 var(--btn-shadow);transition:background .15s, transform .08s}
+button:hover{background:var(--btn-hover)}
+button:active{transform:translateY(2px);box-shadow:none}
+button.alt{color:var(--fg);background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted), 0 2px 0 var(--btn-shadow)}
+button.alt:hover{background:var(--line)}
+button .ic{font-size:12px;opacity:.85}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--w);outline-offset:2px}
+.read{font-family:var(--font-body);font-variant-numeric:tabular-nums;font-size:13.5px;color:var(--fg)}
+.read.lines{display:grid;gap:2px}
+.status{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+/* 상태 표시: 테두리 없는 글자 + 색 점. 버튼과 혼동되지 않도록 모양을 다르게 둡니다. */
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:0;border:0;cursor:default}
+.pill::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+button.alt:active{box-shadow:inset 0 0 0 1.5px var(--muted)}
+.state{font-size:13px;color:var(--muted);cursor:default}
+.state b{color:var(--fg);font-weight:600}
+.cap{padding:10px 14px 0;font-size:13px;color:var(--muted)}
+.guide{display:grid;gap:4px;margin:0;padding:12px 14px;border-top:1px solid var(--line);font-size:14px;line-height:1.65}
+.guide div{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:8px}
+.guide dt{color:var(--muted);font-weight:600}
+.guide dd{margin:0;color:var(--soft)}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:13px;white-space:nowrap}
+td.grade{white-space:nowrap;font-weight:700;color:var(--fg)}
+td.grade small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+tr.out td{color:var(--muted)}
+@media (max-width:620px){
+  table.grades thead{display:none}
+  table.grades,table.grades tbody{display:block}
+  table.grades tr{display:grid;gap:2px;margin-bottom:10px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--screen)}
+  table.grades td{padding:0;border:0}
+  table.grades td::before{content:attr(data-label) " · ";color:var(--muted);font-size:12.5px;font-weight:400}
+  table.grades td.grade::before{content:none}
+}
+.next{padding:20px;border:1px dashed var(--muted);border-radius:6px;display:grid;gap:8px;color:var(--soft)}
+footer{padding-block:32px 0;border-top:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:6px}
+
+/* 교과서 블록 */
+.book{display:grid;gap:14px;padding:18px 18px 20px;background:#f7f5fc;border-left:3px solid var(--j);border-radius:0 6px 6px 0}
+.book>.h,.radio>.h{font-size:12.5px;font-weight:700;letter-spacing:.06em}
+.book>.h{color:var(--j)}
+.book .prose{max-width:none}
+.book h4{margin:4px 0 0;font-size:15.5px;font-weight:700;color:var(--fg)}
+.key{display:grid;gap:4px;padding:12px 16px;background:var(--bg);border:1px solid #d9d2ee;border-radius:6px}
+.key .t{font-size:12.5px;font-weight:700;color:var(--j)}
+.key .math{font-size:17px}
+.key ul{margin:0;padding-left:1.2em;color:var(--soft);font-size:15px}
+.ex{display:grid;gap:10px;padding:12px 16px;background:var(--bg);border:1px dashed #b7accf;border-radius:6px;color:var(--soft)}
+.ex .t{font-size:12.5px;font-weight:700;color:var(--fg)}
+.ex details{display:grid;gap:8px}
+.ex summary{list-style:none;justify-self:start;display:inline-flex;align-items:center;gap:6px;width:max-content;font-size:13.5px;font-weight:600;color:var(--fg);background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted), 0 2px 0 var(--btn-shadow);border-radius:6px;padding:6px 12px;cursor:pointer;user-select:none}
+.ex summary::-webkit-details-marker{display:none}
+.ex summary:hover{background:var(--line)}
+.ex summary:active{transform:translateY(2px);box-shadow:inset 0 0 0 1.5px var(--muted)}
+.ex summary::before{content:"▸";font-size:12px}
+.ex details[open] summary::before{content:"▾"}
+.ex details[open] summary .o{display:none}
+.ex details:not([open]) summary .c{display:none}
+.ex .sol{display:grid;gap:8px;padding:10px 0 0;margin-top:8px;border-top:1px solid var(--line)}
+.tbl-s{border-collapse:collapse;font-size:14.5px;width:auto}
+.tbl-s th,.tbl-s td{padding:6px 14px;border:1px solid var(--line);text-align:center;white-space:nowrap}
+.tbl-s th{background:var(--screen)}
+.controls select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit}
+.presets{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.presets .lbl{color:var(--muted);font-size:13px}
+.presets button{font-size:13px;padding:6px 11px}
+/* 무선으로 이어 보기 블록 */
+.radio{display:grid;gap:14px;padding:18px 18px 20px;background:#fbf7ef;border-left:3px solid var(--f);border-radius:0 6px 6px 0;color:var(--soft);font-size:15px}
+.radio>.h{color:var(--f)}
+.radio .prose{max-width:none}
+.radio h4{margin:6px 0 0;font-size:15.5px;font-weight:700;color:var(--fg)}
+.radio .ex{border-color:#d8c3a0}
+.terms{display:grid;gap:6px;margin:0;padding:12px 14px;background:var(--bg);border:1px solid #eadfcb;border-radius:6px;font-size:14.5px}
+.terms div{display:grid;grid-template-columns:minmax(6.5em,max-content) minmax(0,1fr);gap:4px 14px}
+.terms dt{font-weight:700;color:var(--fg)}
+.terms dd{margin:0;color:var(--soft)}
+@media (max-width:560px){.terms div{grid-template-columns:1fr}}
+.map{border-collapse:separate;border-spacing:0;width:auto;min-width:min(100%,460px);background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.map th,.map td{padding:9px 14px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--line)}
+.map tbody tr:last-child th,.map tbody tr:last-child td{border-bottom:0}
+.map thead th{font-size:12px;font-weight:500;color:var(--muted);background:var(--screen)}
+.map tbody th{text-align:left;font-size:14px;font-weight:700;color:var(--fg);background:var(--screen)}
+.map tbody th small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.map td{font-size:16px;color:var(--fg)}
+.map td.c1{color:var(--pi);font-weight:600;background:rgba(194,24,91,.06)}
+.map td.c2{color:var(--w);font-weight:600;background:rgba(0,116,127,.07)}
+.map td.c3{color:var(--l);font-weight:600;background:rgba(194,81,0,.07)}
+.map td.c4{color:var(--j);font-weight:600;background:rgba(94,53,177,.07)}
+.readas{margin:0;padding:10px 14px;background:var(--bg);border-left:3px solid var(--f);color:var(--fg);font-size:15px}
+.readas::before{content:"읽는 법  ";font-size:12px;font-weight:700;color:var(--f);letter-spacing:.04em}
+.note{font-size:13.5px;color:var(--muted)}
+
+.mstatus{display:grid;gap:6px}
+.msteps{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);cursor:default}
+.mstep::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line);margin-right:6px;vertical-align:middle}
+.mstep.on{color:var(--fg);font-weight:700}
+.mstep.on::before{background:var(--pi)}
+.mcap{margin:0;font-size:14.5px;color:var(--fg);min-height:2.6em}
+/* 편 목차: 누르면 이동하는 링크(테두리·화살표) */
+nav.tiers ul{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:0;margin:4px 0 0;list-style:none}
+nav.tiers a{display:inline-flex;align-items:center;gap:6px;padding:7px 15px;border:1px solid var(--muted);border-radius:999px;color:var(--fg);background:var(--line);text-decoration:none;font-size:14px;font-weight:600;box-shadow:0 2px 0 var(--btn-shadow)}
+nav.tiers a:not([aria-current])::after{content:"→";font-size:12px;color:var(--soft)}
+nav.tiers a:hover{background:#cfd8e5;border-color:var(--fg)}
+nav.tiers a[aria-current]{color:var(--bg);background:var(--fg);border-color:var(--fg);box-shadow:none;cursor:default}
+nav.tiers a[aria-current]::before{content:"지금 보는 편 ·";font-size:12px;font-weight:500;opacity:.8}
+.cmp{display:grid;gap:8px}
+.cmphead{display:flex;align-items:center;gap:8px}
+.cmpkind{font-size:13px;font-weight:700;color:var(--f);cursor:default;letter-spacing:.02em}
+.cmpkind::before{content:"◆ ";color:var(--j)}
+/* 학년별 표의 작은 그래프 (누를 수 없는 그림) */
+table.grades td.fig{width:92px;padding-top:6px;padding-bottom:6px;vertical-align:middle}
+table.grades td.fig svg{display:block;width:80px;height:48px;background:var(--screen);border-radius:4px}
+table.grades svg path,table.grades svg circle{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+table.grades svg .ax{stroke:#c3cad6;stroke-width:1}
+table.grades svg .dash{stroke-dasharray:3 3;stroke-width:1.2}
+table.grades svg .p{stroke:var(--pi)} table.grades svg .l{stroke:var(--l)} table.grades svg .c{stroke:var(--c)}
+table.grades svg .w{stroke:var(--w)} table.grades svg .j{stroke:var(--j)} table.grades svg .r{stroke:var(--r);stroke-width:1.4}
+table.grades svg .k{stroke:var(--fg)} table.grades svg .f{stroke:var(--f)} table.grades svg .m{stroke:var(--muted);stroke-width:1.2}
+table.grades svg .dp{fill:var(--pi);stroke:#fff;stroke-width:1} table.grades svg .dw{fill:var(--w);stroke:#fff;stroke-width:1}
+table.grades svg .bar{fill:rgba(194,81,0,.22);stroke:var(--l);stroke-width:.8}
+table.grades svg .area{fill:rgba(194,24,91,.12);stroke:none}
+table.grades svg .t{font:italic 12px "Times New Roman",serif;fill:var(--j)}
+@media (max-width:620px){table.grades td.fig{width:auto;padding:4px 0}table.grades td.fig::before{content:none}}
+@media (max-width:560px){.map{min-width:0}.map th,.map td{padding:7px 7px;font-size:13.5px}.map thead th{font-size:11px}.map tbody th{font-size:12.5px}.book,.radio{padding:14px 10px 16px}}
+/* 좁은 화면: 수식·표 넘침 방지 */
+.mfit{display:block;max-width:100%}
+mjx-container[display="true"]{max-width:100%;overflow-x:auto;overflow-y:hidden}
+.tbl-s,table.map{display:block;max-width:100%;overflow-x:auto}
+@media (max-width:560px){
+  .tbl-s th,.tbl-s td{padding:5px 7px;white-space:normal;font-size:13px}
+  .map th,.map td{white-space:normal}
+}
+/* 듣기 (1편과 같은 모양) */
+.listen{display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center}
+.narr-all{font-size:16px;padding:10px 20px}
+.narr-note{color:var(--muted);font-size:13px;text-align:center}
+.narr-sec{justify-self:start;font-size:13px;padding:6px 12px}
+.narr-on{outline:2px solid var(--j);outline-offset:6px;border-radius:6px;background:rgba(94,53,177,.06)}
+.narr-bar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;padding:10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));background:var(--screen);border-top:1px solid var(--line);box-shadow:0 -6px 18px rgba(20,27,38,.12)}
+.narr-bar .nb-info{display:flex;gap:10px;align-items:baseline;font-size:13px;color:var(--soft)}
+.nb-pos{color:var(--muted);font-variant-numeric:tabular-nums}
+.nb-ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.nb-ctrl button{min-width:40px;justify-content:center;padding:7px 10px}
+.nb-rate{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
+.nb-rate select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit}
+.nb-msg{flex-basis:100%;text-align:center;font-size:13px;color:var(--l)}
+body.narr-open{padding-bottom:120px}
+.narr-unsup{max-width:34em;display:grid;gap:10px;margin-top:4px;padding:12px 14px;font-size:14px;line-height:1.6;color:var(--soft);background:var(--screen);border:1px solid var(--line);border-radius:6px;text-align:center}
+.unsup-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.btnlink{display:inline-flex;align-items:center;padding:8px 14px;border-radius:6px;background:var(--btn);color:var(--bg);font-weight:600;font-size:14px;text-decoration:none;box-shadow:0 2px 0 var(--btn-shadow)}
+.btnlink:hover{background:var(--btn-hover)}
+@media (max-width:560px){
+  .narr-bar{gap:4px 8px;padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom, 0px))}
+  .narr-bar .nb-info{flex-basis:100%;justify-content:center;font-size:12px;line-height:1.2}
+  .nb-ctrl{gap:6px;flex-wrap:nowrap}
+  .nb-ctrl button{min-width:36px;padding:6px 8px}
+  .nb-rate{font-size:0;gap:0}
+  .nb-rate select{font-size:13px;padding:2px 4px}
+  body.narr-open{padding-bottom:84px}
+}
+.narr-bar.emb{position:absolute;bottom:auto;top:0}
+</style>
+
+<style>
+/* ---------- 이 페이지에서 더한 모양 ---------- */
+/* 한국어는 낱말 중간에서 줄을 바꾸지 않습니다 */
+body{word-break:keep-all;overflow-wrap:break-word}
+/* 고르는 버튼(여럿 중 하나): 고른 것은 진한 바탕. 상태 표시(색 점·글자)와 모양이 다릅니다. */
+button.alt[aria-pressed="true"]{color:var(--bg);background:var(--btn);box-shadow:0 2px 0 var(--btn-shadow)}
+button.alt[aria-pressed="true"]:hover{background:var(--btn-hover)}
+.choice{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.choice .lbl{color:var(--muted);font-size:13px}
+.choice button{font-size:13px;padding:6px 11px}
+.controls .val{font-family:var(--font-mono);font-size:13px;color:var(--fg);min-width:5.5em}
+.controls select{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:3px 6px;font:inherit}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 14px 0;font-size:12.5px;color:var(--muted);cursor:default}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c0,#999)}
+/* 공식 풀어 읽기 */
+.parts{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.parts li{display:grid;grid-template-columns:minmax(7.5em,max-content) minmax(0,1fr);gap:4px 14px;align-items:baseline;padding:8px 12px;background:var(--bg);border:1px solid var(--line);border-radius:6px;font-size:15px;color:var(--soft)}
+.parts li .m{font-size:16px;color:var(--fg)}
+@media (max-width:560px){.parts li{grid-template-columns:1fr}}
+/* 큰 단락 머리 */
+.sub{font-size:15.5px;font-weight:700;color:var(--fg);margin-top:4px}
+/* 정리 표 */
+table.map td.l{text-align:left;white-space:normal;font-size:14.5px}
+.math-c{text-align:center}
+.wrap-note{font-size:13px;color:var(--muted)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+</style>
+<script>
+window.MathJax = {
+  loader:{load:['[tex]/color']},
+  tex:{
+    inlineMath:[['\\(','\\)']], displayMath:[['\\[','\\]']],
+    packages:{'[+]':['color']},
+    macros:{
+      cZ:['{\\color[RGB]{194,24,91}{#1}}',1],
+      cF:['{\\color[RGB]{143,91,0}{#1}}',1],
+      cW:['{\\color[RGB]{0,116,127}{#1}}',1],
+      cJ:['{\\color[RGB]{94,53,177}{#1}}',1],
+      cR:['{\\color[RGB]{22,121,79}{#1}}',1],
+      cL:['{\\color[RGB]{194,81,0}{#1}}',1],
+      cC:['{\\color[RGB]{31,99,198}{#1}}',1]
+    }
+  },
+  svg:{fontCache:'global'}
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" defer></script>
+
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">전파로 읽는 수학 · 푸리에 변환</div>
+    <h1>그래프를 원에 감으면 진동수가 보입니다</h1>
+    <p class="lede">여러 소리와 여러 전파가 한데 섞인 신호에서, 어떤 진동수가 얼마나 들어 있는지 골라내는 수학을 <strong>푸리에 변환</strong>(Fourier transform)이라고 합니다. 이 페이지는 공식부터 외우지 않습니다. 신호 그래프를 원 둘레에 감아 보는 단순한 실험에서 출발해, 공식 한 줄까지 한 단계씩 쌓아 올립니다. 마지막에는 같은 기계가 무전기와 SDR 안에서 어떤 모습으로 일하고 있는지 확인합니다.</p>
+    <ul class="qs"><li>한 번 섞인 신호를 어떻게 다시 나눌까?</li><li>왜 하필 원에 감을까?</li><li>수신기의 다이얼은 무엇을 돌리는 걸까?</li></ul>
+    <p class="cast-label">바로 가기</p>
+    <ul class="cast">
+      <li><a href="#s1">1 · 섞인 신호</a></li>
+      <li><a href="#s2">2 · 원에 감는 기계</a></li>
+      <li><a href="#s3">3 · 공식으로 쓰기</a></li>
+      <li><a href="#s4">4 · 무전기 안의 푸리에 변환</a></li>
+      <li><a href="#sum">정리</a></li>
+    </ul>
+  </header>
+
+  <!-- ================= 1 ================= -->
+  <section class="scene" id="s1">
+    <div class="tag">1 · 섞인 신호</div>
+    <h2>섞기는 쉽고 나누기는 어렵습니다</h2>
+
+    <div class="item" id="i1">
+      <h3><span class="no">1-1</span>신호는 시간에 따른 세기입니다</h3>
+      <p class="ask">스피커 옆의 공기 압력, 안테나 끝의 전압은 어떤 그래프로 나타날까?</p>
+      <div class="prose">
+        <p>소리는 공기 압력이 빠르게 오르내리는 현상이고, 전파는 전기장과 자기장이 시간에 따라 빠르게 변하며 퍼져 나가는 전자기파이고, 안테나에는 그에 따라 변하는 전압이 유도됩니다. 마이크나 안테나가 내놓는 것은 결국 매 순간의 압력이나 전압 값입니다. 그래서 어떤 신호든 결국 <strong>시각 t를 넣으면 그 순간의 세기가 나오는 함수</strong>로 적을 수 있고, 이 페이지에서는 그것을 g(t)라고 부릅니다.</p>
+        <p>가장 단순한 신호는 한 가지 빠르기로만 오르내리는 진동입니다. 피아노의 라(A4) 음은 1초에 440번 오르내리고, 40 m 밴드의 7.030 MHz 전파는 1초에 703만 번 오르내립니다. 이렇게 한 가지 빠르기로만 진동하는 신호를 <strong>순수한 진동</strong>이라 하고, 그래프는 사인·코사인 모양입니다.</p>
+      </div>
+      <dl class="terms">
+        <div><dt>진동수 f</dt><dd>1초에 몇 번 오르내리는지. 원어 frequency. 단위 Hz(헤르츠), 1 Hz는 1초에 한 번입니다. 이 페이지는 수학 이야기에서는 진동수, 무선 장비 이야기에서는 관례대로 주파수라고 씁니다. 같은 말입니다.</dd></div>
+        <div><dt>주기 T</dt><dd>한 번 오르내리는 데 걸리는 시간. T = 1/f입니다. 3 Hz면 0.33초입니다.</dd></div>
+        <div><dt>신호 g(t)</dt><dd>시각 t에서의 세기. 소리라면 공기 압력, 안테나라면 전압입니다.</dd></div>
+      </dl>
+      <div class="prose">
+        <p>두 진동이 동시에 울리면 어떻게 될까요? 같은 순간의 세기가 그대로 더해집니다. 어떤 순간에는 두 봉우리가 겹쳐 크게 솟고(보강 간섭), 어떤 순간에는 봉우리와 골이 만나 서로 지워집니다(상쇄 간섭). 그래프에서는 진동수를 눈으로 알아보기 쉽도록 1초에 2~5번처럼 느린 진동을 씁니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">맨 위 굵은 선이 합. 아래 가는 선들이 더해지는 순수한 진동</div>
+        <canvas id="cvMix" aria-label="여러 순수한 진동과 그 합의 그래프"></canvas>
+        <div class="controls choice" id="mixBtns"><span class="lbl">더할 진동 고르기</span>
+          <button type="button" class="alt" data-hz="2" aria-pressed="true">2 Hz</button>
+          <button type="button" class="alt" data-hz="3" aria-pressed="true">3 Hz</button>
+          <button type="button" class="alt" data-hz="4" aria-pressed="false">4 Hz</button>
+          <button type="button" class="alt" data-hz="5" aria-pressed="false">5 Hz</button>
+        </div>
+        <div class="status"><span class="read lines" id="readMix"></span></div>
+        <dl class="guide">
+          <div><dt>조작</dt><dd>버튼을 눌러 진동을 넣고 뺍니다. 진한 버튼이 더해지는 진동입니다.</dd></div>
+          <div><dt>관찰</dt><dd>진동을 넷 다 넣어도 합은 여전히 이 넷을 더한 것일 뿐인데, 합만 보아서는 무엇이 들어 있는지 알아보기 어렵습니다.</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="item" id="i2">
+      <h3><span class="no">1-2</span>이 페이지의 질문</h3>
+      <p class="ask">합만 기록된 신호에서, 무엇이 얼마나 섞였는지 되찾을 수 있을까?</p>
+      <div class="prose">
+        <p>마이크의 녹음 파일에는 위의 굵은 선, 곧 합만 남습니다. 어떤 진동들을 더했는지에 대한 기록은 어디에도 없습니다. 섞기는 쉬워도 나누기는 어려워 보입니다. 물감 여러 색을 한 번 섞은 뒤 원래 색을 하나씩 다시 뽑아내라는 것과 비슷합니다.</p>
+        <p>무선에서는 이 문제가 매일 일어납니다. 안테나에는 밴드 안에서 동시에 전파를 내는 모든 국의 신호가, 잡음과 함께 하나의 전압으로 더해져 들어옵니다. 수신기는 그 합에서 내가 고른 한 국만 꺼내 들려줍니다. 밴드스코프는 한술 더 떠서, 밴드 전체에서 어느 주파수에 얼마나 센 신호가 있는지를 한 화면에 그립니다.</p>
+        <p>그래서 이 페이지의 질문은 이렇습니다. <strong>시간에 대한 세기 g(t)만 주어졌을 때, 그 안에 어떤 진동수가 얼마나 들어 있는지를 알려 주는 기계를 만들 수 있을까?</strong> 다음 장에서 그 기계를 직접 만들어 봅니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section class="scene" id="s2">
+    <div class="tag">2 · 원에 감는 기계</div>
+    <h2>그래프를 원 둘레에 감아 봅니다</h2>
+
+    <div class="item" id="i3">
+      <h3><span class="no">2-1</span>시간 그래프를 원에 감기</h3>
+      <p class="ask">1초에 3번 진동하는 신호를 원 둘레에 감으면 어떤 모양이 될까?</p>
+      <div class="prose">
+        <p>실험에 쓸 신호는 1초에 3번 진동하고, 0과 1 사이를 오르내리는 그래프입니다. 일부러 위로 치우쳐 음수가 되지 않게 두었습니다. 식으로는 g(t) = 0.5 + 0.5 cos(2π·3t)이고, 0초부터 4.5초까지만 봅니다.</p>
+        <p>이 그래프를 원 둘레에 감는 규칙은 다음과 같습니다.</p>
+      </div>
+      <ol class="parts">
+        <li><span class="m">① 화살표 길이</span><span>시각 t마다 원점에서 화살표를 하나 긋습니다. 화살표의 길이는 그 순간의 세기 g(t)입니다.</span></li>
+        <li><span class="m">② 화살표 방향</span><span>시간이 흐르는 동안 화살표는 일정한 빠르기로 시계 방향으로 돕니다. 1초에 몇 바퀴 도는지를 <strong>감는 진동수</strong>라 부르고, 이 값은 우리가 마음대로 정합니다.</span></li>
+        <li><span class="m">③ 감긴 그래프</span><span>화살표 끝이 지나간 자취가 감긴 그래프입니다. 원래 그래프의 높은 곳은 원점에서 먼 곳에, 낮은 곳은 원점 가까이에 찍힙니다.</span></li>
+      </ol>
+      <div class="prose">
+        <p>여기에는 진동수가 두 가지 있습니다. 하나는 <strong>신호의 진동수</strong>(1초에 3번)로, 신호에 이미 정해져 있습니다. 다른 하나는 <strong>감는 진동수</strong>(1초에 몇 바퀴)로, 우리가 손잡이처럼 돌려 바꾸는 값입니다. 이 두 값의 관계가 이 페이지의 전부라고 해도 과언이 아닙니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">위: 원래 그래프(점선은 화살표가 한 바퀴를 마치는 시각). 아래: 원에 감긴 그래프</div>
+        <canvas id="cvW1" aria-label="시간 그래프와 원에 감긴 그래프"></canvas>
+        <div class="controls">
+          <label for="fW1">감는 진동수</label><input type="range" id="fW1" min="0" max="500" step="1" value="50"><span class="val" id="valW1"></span>
+          <button type="button" id="penW1"><span class="ic" aria-hidden="true">▶</span>감는 모습 보기</button>
+        </div>
+        <div class="controls presets"><span class="lbl">값 맞추기</span>
+          <button type="button" class="alt" data-f="50">0.50</button><button type="button" class="alt" data-f="79">0.79</button><button type="button" class="alt" data-f="155">1.55</button><button type="button" class="alt" data-f="294">2.94</button><button type="button" class="alt" data-f="300">3.00</button>
+        </div>
+        <div class="status"><span class="pill" id="pillW1"></span><span class="read" id="readW1"></span></div>
+        <dl class="guide">
+          <div><dt>조작</dt><dd>막대로 감는 진동수(바퀴/초)를 바꿉니다. 「감는 모습 보기」는 화살표가 0초부터 4.5초까지 그래프를 감아 가는 과정을 천천히 보여 줍니다.</dd></div>
+          <div><dt>관찰</dt><dd>대부분의 값에서는 꽃잎이 원 둘레 여러 방향으로 흩어진 모양이 나옵니다. 정확히 3.00일 때만 봉우리가 모두 오른쪽에, 골이 모두 왼쪽에 몰려 한쪽으로 쏠린 모양이 됩니다.</dd></div>
+        </dl>
+      </div>
+      <div class="ex">
+        <div class="t">예제</div>
+        <p>감는 진동수가 0.5 바퀴/초이면 화살표가 한 바퀴 도는 데 몇 초가 걸립니까? 그 사이에 신호는 몇 번 오르내리고, 감긴 그래프에는 꽃잎이 몇 장 생깁니까?</p>
+        <details><summary><span class="o">풀이 보기</span><span class="c">풀이 접기</span></summary>
+          <div class="sol"><p>1초에 반 바퀴이므로 한 바퀴에 2초가 걸립니다. 신호는 1초에 3번 오르내리므로 2초 동안 6번 오르내리고, 봉우리마다 화살표가 길어지니 원 둘레에 꽃잎이 6장 생깁니다. 4.5초 동안에는 2바퀴 하고도 4분의 1바퀴를 돌기 때문에, 같은 꽃잎 위를 두 번 남짓 지나갑니다.</p><p>일반적으로 한 바퀴 동안의 봉우리 수는 (신호의 진동수) ÷ (감는 진동수)입니다. 이 값이 정확히 1이 되면, 한 바퀴에 봉우리가 딱 하나라서 봉우리가 매번 같은 방향에 찍힙니다.</p></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="item" id="i4">
+      <h3><span class="no">2-2</span>무게중심을 찍어 봅니다</h3>
+      <p class="ask">감긴 모양이 한쪽으로 쏠렸는지를 숫자 하나로 나타내려면?</p>
+      <div class="prose">
+        <p>화살표 끝이 지나가는 동안 <strong>같은 시간 간격마다 같은 무게의 구슬을 하나씩</strong> 내려놓는다고 생각해 봅니다. 이 구슬들의 <strong>무게중심</strong>, 곧 시각에 따라 찍힌 점들의 평균 위치를 보는 것입니다. 꽃잎이 여러 방향으로 흩어져 있으면 무게중심은 원점 근처에 머물고, 봉우리가 모두 오른쪽에 몰리면 무게중심도 오른쪽으로 끌려갑니다.</p>
+        <p class="note">곡선 모양의 철사를 만들어 매단 무게중심과는 조금 다릅니다. 철사는 길이마다 무게가 실리지만, 여기서는 시간마다 같은 무게를 둡니다. 화살표 끝이 빨리 움직이는 곳은 구슬 사이가 넓고, 천천히 움직이는 곳은 촘촘합니다.</p>
+        <p>이제 감는 진동수를 0부터 조금씩 올리면서, 무게중심이 오른쪽으로 얼마나 가 있는지(무게중심의 x좌표)를 세 번째 그래프에 찍어 봅니다. 가로축은 감는 진동수, 세로축은 무게중심의 x좌표입니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">① 원래 신호 · ② 감긴 그래프와 무게중심(분홍 점) · ③ 감는 진동수에 따른 무게중심의 x좌표</div>
+        <canvas id="cvW2" aria-label="원래 신호, 감긴 그래프와 무게중심, 무게중심 x좌표 그래프"></canvas>
+        <div class="controls">
+          <label for="fW2">감는 진동수</label><input type="range" id="fW2" min="0" max="500" step="1" value="0"><span class="val" id="valW2"></span>
+          <button type="button" id="swW2"><span class="ic" aria-hidden="true">▶</span>0부터 5까지 훑기</button>
+        </div>
+        <div class="controls choice"><span class="lbl">신호</span>
+          <button type="button" class="alt" id="upW2" aria-pressed="true">위로 치우친 신호</button>
+          <button type="button" class="alt" id="ctrW2" aria-pressed="false">평균값을 뺀 신호</button>
+        </div>
+        <div class="status"><span class="pill" id="pillW2"></span><span class="read" id="readW2"></span></div>
+        <dl class="guide">
+          <div><dt>조작</dt><dd>「0부터 5까지 훑기」를 누르면 감는 진동수가 0에서 5까지 천천히 올라가며 ③이 그려집니다. 막대로 직접 옮겨도 됩니다.</dd></div>
+          <div><dt>관찰</dt><dd>③은 대부분 0 근처에서 작게 흔들리다가, 감는 진동수가 3인 곳에서만 솟아오릅니다. 0에서도 높은데, 이것은 아래에서 설명합니다.</dd></div>
+        </dl>
+      </div>
+      <div class="prose">
+        <p class="sub">3에서 솟는 이유</p>
+        <p>감는 진동수가 신호의 진동수와 같으면, 화살표는 신호가 한 번 오르내릴 때마다 정확히 한 바퀴를 돕니다. 그러면 봉우리는 매번 같은 방향(오른쪽)에서, 골은 매번 그 반대쪽(왼쪽)에서 찍힙니다. 먼 점들은 오른쪽에, 가까운 점들은 왼쪽에 모이니 무게중심이 오른쪽으로 끌려갑니다. 조금 어긋나면 봉우리가 찍히는 방향이 바퀴마다 조금씩 밀려 여러 방향으로 흩어지고, 서로 반대쪽의 점들이 상쇄되어 무게중심이 원점 쪽으로 돌아옵니다. 관찰하는 시간이 유한하므로 완전히 0이 되지는 않고, 세 번째 그래프처럼 0 근처에서 작게 흔들립니다. 어긋남이 작을수록 한 바퀴 돌아오는 데 오래 걸리므로, 상쇄되려면 더 길게 관찰해야 합니다(3-3).</p>
+        <p class="sub">0에서도 높은 이유</p>
+        <p>감는 진동수가 0이면 화살표가 돌지 않고 오른쪽만 가리킵니다. 모든 점이 오른쪽 가로축 위에 찍히니, 무게중심의 x좌표는 신호의 평균값 0.5가 됩니다. 신호가 위로 치우쳐 있었기 때문입니다. 「평균값을 뺀 신호」를 눌러 평균을 0으로 만들면 0의 봉우리는 사라지고 3의 봉우리만 남습니다. 전기에서는 이 평균값을 <strong>직류 성분</strong>이라 부릅니다. 0에 생기는 봉우리는 진동이 아니라 직류가 얼마나 섞였는지를 알려 줍니다.</p>
+        <p>이 세 번째 그래프가 바로 우리가 찾던 기계의 출력입니다. 신호 안에 있는 진동수에서만 봉우리가 생깁니다. 아직 몇 가지를 손봐야 하므로, 지금은 <strong>거의 푸리에 변환</strong>이라고 불러 둡니다.</p>
+      </div>
+    </div>
+
+    <div class="item" id="i5">
+      <h3><span class="no">2-3</span>여러 진동수가 섞여 있어도 됩니다</h3>
+      <p class="ask">2 Hz와 3 Hz를 더한 신호를 넣으면 기계는 무엇을 보여 줄까?</p>
+      <div class="prose">
+        <p>기계의 진짜 쓸모는 섞인 신호를 나누는 데 있습니다. 2 Hz와 3 Hz를 더한 신호를 감으면 감긴 그래프는 훨씬 복잡해 보입니다. 그래도 감는 진동수를 2에 맞추면 2 Hz 성분이, 3에 맞추면 3 Hz 성분이 무게중심을 오른쪽으로 끌어당깁니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">신호를 바꿔 가며 ③에 봉우리가 어디 생기는지 봅니다</div>
+        <canvas id="cvW3" aria-label="섞인 신호의 감긴 그래프와 무게중심 x좌표 그래프"></canvas>
+        <div class="controls">
+          <label for="fW3">감는 진동수</label><input type="range" id="fW3" min="0" max="500" step="1" value="200"><span class="val" id="valW3"></span>
+          <button type="button" id="swW3"><span class="ic" aria-hidden="true">▶</span>0부터 5까지 훑기</button>
+        </div>
+        <div class="controls choice" id="sigW3"><span class="lbl">신호 (모두 평균값 0)</span>
+          <button type="button" class="alt" data-sig="c2" aria-pressed="false">2 Hz</button>
+          <button type="button" class="alt" data-sig="c3" aria-pressed="false">3 Hz</button>
+          <button type="button" class="alt" data-sig="c23" aria-pressed="true">2 Hz + 3 Hz</button>
+          <button type="button" class="alt" data-sig="c235" aria-pressed="false">2 + 3 + 4.5 Hz (세기 다름)</button>
+        </div>
+        <div class="status"><span class="pill" id="pillW3"></span><span class="read" id="readW3"></span></div>
+      </div>
+      <div class="prose">
+        <p class="sub">왜 섞여 있어도 나눌 수 있을까</p>
+        <p>무게중심은 평균입니다. 그리고 평균에는 「더한 것의 평균은 평균끼리 더한 것과 같다」는 성질이 있습니다. 2 Hz와 3 Hz를 더한 신호를 감는 것은, 두 신호를 따로 감은 화살표를 순간마다 이어 붙이는 것과 같습니다. 따라서 섞인 신호의 무게중심은 각 성분의 무게중심을 더한 것입니다.</p>
+        <p>그런데 감는 진동수가 2일 때 3 Hz 성분은 흩어져 상쇄되므로 무게중심이 거의 0이고, 3일 때는 2 Hz 성분이 거의 0입니다. 그래서 2와 3에 각각의 봉우리가 따로 서고, 다른 곳에서는 둘 다 작습니다. <strong>각각 변환한 뒤 더한 결과가, 먼저 더한 뒤 변환한 결과와 같습니다.</strong> 수학에서는 이 성질을 선형성이라 부릅니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">따로 변환하고 더하기 = 먼저 더하고 변환하기</div>
+        <canvas id="cvLin" aria-label="2 Hz, 3 Hz, 그 합을 각각 변환한 세 그래프"></canvas>
+      </div>
+      <div class="ex">
+        <div class="t">예제</div>
+        <p>신호가 g(t) = 0.3 cos(2π·2t) + 0.5 cos(2π·3t) + 0.2 cos(2π·4.5t)일 때, 세 번째 그래프의 봉우리는 어디에 몇 개 생기고, 어느 것이 가장 높습니까?</p>
+        <details><summary><span class="o">풀이 보기</span><span class="c">풀이 접기</span></summary>
+          <div class="sol"><p>성분마다 봉우리가 하나씩 생기므로 2, 3, 4.5에 세 개입니다. 진동수가 일치할 때 무게중심의 x좌표는 그 성분의 세기의 절반이므로, 높이는 각각 0.15, 0.25, 0.10이고 3이 가장 높습니다. 위 그림에서 「2 + 3 + 4.5 Hz」를 골라 확인할 수 있습니다.</p><p>왜 절반일까요? 진동수가 일치하면 화살표의 길이 a·cos(2πft)와 방향이 함께 돌아, 오른쪽 성분이 a·cos²(2πft)가 됩니다. cos²의 평균은 1/2이라서 무게중심의 x좌표는 a/2입니다.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section class="scene" id="s3">
+    <div class="tag">3 · 공식으로 쓰기</div>
+    <h2>감는 기계를 식 한 줄로</h2>
+
+    <div class="item" id="i6">
+      <h3><span class="no">3-1</span>회전은 복소수의 곱셈입니다</h3>
+      <p class="ask">원 위를 도는 화살표를 식으로 어떻게 쓸까?</p>
+      <div class="prose">
+        <p>지금까지는 무게중심의 x좌표만 보았습니다. 그런데 무게중심은 평면 위의 점이므로 y좌표도 있습니다. x좌표만 보면 정보의 절반을 버리는 셈입니다(이 절반이 무선에서 왜 중요한지는 4-1에서 다시 나옵니다). 평면 위의 점 (x, y)를 한 덩어리로 다루는 가장 좋은 방법은 <strong>복소수</strong> x + iy로 보는 것입니다. 가로축이 실수, 세로축이 허수인 이 평면을 복소평면이라 합니다.</p>
+        <p>복소수를 쓰는 까닭은 회전이 곱셈 하나로 끝나기 때문입니다. i를 곱하면 90°, i를 두 번 곱하면 180° 돌아갑니다. 임의의 각 θ만큼 돌리는 수는 오일러 공식이 알려 줍니다.</p>
+      </div>
+      <div class="key"><div class="t">핵심 공식 · 오일러 공식</div><div class="math">\[ e^{i\theta} = \cos\theta + i\sin\theta \]</div>
+        <ul><li>e<sup>iθ</sup>는 반지름 1인 원 위에서, 오른쪽(1)에서 시계 반대 방향으로 θ만큼 돌아간 점입니다.</li><li>θ는 라디안으로 잽니다. 한 바퀴는 원 둘레의 길이와 같은 2π입니다.</li></ul></div>
+      <p class="readas">θ는 세타, π는 파이라고 읽습니다. e는 자연로그의 밑 2.718…, i는 제곱해서 −1이 되는 수입니다.</p>
+      <div class="prose">
+        <p>이제 θ 자리에 시간을 넣어 화살표를 돌립니다. θ = 2πt로 두면 t가 1초 늘 때마다 θ가 2π, 곧 한 바퀴 늘어나므로 1초에 한 바퀴 도는 화살표가 됩니다. 1초에 f바퀴 돌게 하려면 지수에 f를 곱해 2πft로 씁니다. f = 0.1이면 t가 10초가 되어야 지수가 2π에 이르므로 10초에 한 바퀴입니다.</p>
+        <p>마지막으로 지수 앞에 마이너스를 붙입니다. 푸리에 변환에서는 관례로 시계 방향 회전을 쓰기 때문입니다. 2장의 그림도 모두 시계 방향으로 감았습니다. 이렇게 해서 「1초에 f바퀴, 시계 방향」으로 도는 화살표가 식 하나로 정리됩니다.</p>
+      </div>
+      <div class="key"><div class="t">핵심 공식 · 감는 화살표</div><div class="math">\[ \cJ{e^{-2\pi i f t}} = \cos(2\pi f t) - i\,\sin(2\pi f t) \]</div>
+        <ul><li>길이는 늘 1, 1초에 f바퀴, 시계 방향</li></ul></div>
+      <div class="prose">
+        <p>여기에 신호 g(t)를 곱하면 화살표의 길이가 순간마다 g(t)로 바뀝니다. 2-1의 규칙 ①과 ②가 곱셈 한 번으로 합쳐진 것입니다. 시각 t를 0부터 흘려보내며 이 값을 찍으면 그대로 감긴 그래프가 그려집니다.</p>
+      </div>
+      <div class="key"><div class="t">핵심 공식 · 감긴 그래프 위의 점</div><div class="math">\[ \cW{g(t)}\,\cJ{e^{-2\pi i f t}} \]</div></div>
+      <div class="stage">
+        <div class="cap">복소평면 위의 화살표. 「g(t)를 곱하기」를 고르면 화살표 길이가 신호를 따라 바뀌며 감긴 그래프를 그립니다</div>
+        <canvas id="cvRot" aria-label="복소평면에서 도는 화살표"></canvas>
+        <div class="controls">
+          <label for="fRot">f</label><input type="range" id="fRot" min="0" max="300" step="1" value="50"><span class="val" id="valRot"></span>
+          <button type="button" id="pRot"><span class="ic" aria-hidden="true">▶</span>시간 흘리기</button>
+          <span class="state">상태: <b id="stRot">멈춤</b></span>
+        </div>
+        <div class="controls choice"><span class="lbl">화살표</span>
+          <button type="button" class="alt" id="rotA" aria-pressed="true">회전만 e<sup>−2πift</sup></button>
+          <button type="button" class="alt" id="rotB" aria-pressed="false">g(t)를 곱하기</button>
+          <span class="lbl" style="margin-left:6px">지수의 부호</span>
+          <button type="button" class="alt" id="sgnM" aria-pressed="true">− (시계 방향)</button>
+          <button type="button" class="alt" id="sgnP" aria-pressed="false">+ (시계 반대)</button>
+        </div>
+        <div class="status"><span class="read lines" id="readRot"></span></div>
+      </div>
+    </div>
+
+    <div class="item" id="i7">
+      <h3><span class="no">3-2</span>점들의 평균에서 적분으로</h3>
+      <p class="ask">감긴 그래프의 무게중심은 어떻게 계산할까?</p>
+      <div class="prose">
+        <p>컴퓨터처럼 생각해 봅니다. 구간 안에서 시각을 N개 골라 \(t_1, t_2, \ldots, t_N\)이라 하고, 각 시각의 점 \(g(t_k)\,e^{-2\pi i f t_k}\)를 구합니다. 이 복소수들을 모두 더한 뒤 N으로 나누면 점들의 평균 위치, 곧 무게중심의 근삿값이 됩니다.</p>
+      </div>
+      <div class="key"><div class="t">점 N개로 어림한 무게중심</div><div class="math">\[ \frac{1}{N}\sum_{k=1}^{N} \cW{g(t_k)}\,\cJ{e^{-2\pi i f t_k}} \]</div></div>
+      <p class="readas">Σ는 시그마라고 읽고, k = 1부터 N까지 모두 더하라는 뜻입니다.</p>
+      <div class="prose">
+        <p>점을 많이 고를수록 어림은 정확해집니다. 점의 개수를 한없이 늘리면 「더해서 개수로 나누기」는 「적분해서 구간의 길이로 나누기」가 됩니다. 함수의 평균값을 구하는 적분의 방법 그대로입니다.</p>
+      </div>
+      <div class="key"><div class="t">핵심 공식 · 감긴 그래프의 무게중심</div><div class="math">\[ \cL{\frac{1}{t_2-t_1}}\int_{t_1}^{t_2} \cW{g(t)}\,\cJ{e^{-2\pi i f t}}\,dt \]</div></div>
+      <div class="prose">
+        <p>복소수 값을 갖는 함수를 적분한다는 것이 낯설 수 있지만, 실수부와 허수부를 따로 적분하는 것뿐입니다. 이 식 전체가 가리키는 것은 결국 <strong>감긴 그래프의 무게중심</strong> 하나입니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">보라 점: 고른 시각의 점들 · 주황 십자: 그 점들의 평균 · 분홍 점: 적분으로 구한 무게중심</div>
+        <canvas id="cvAvg" aria-label="감긴 그래프 위의 표본 점과 그 평균"></canvas>
+        <div class="controls">
+          <label for="nAvg">점의 개수 N</label><input type="range" id="nAvg" min="3" max="200" step="1" value="12"><span class="val" id="valNAvg"></span>
+        </div>
+        <div class="controls">
+          <label for="fAvg">감는 진동수</label><input type="range" id="fAvg" min="0" max="500" step="1" value="300"><span class="val" id="valFAvg"></span>
+        </div>
+        <div class="status"><span class="read lines" id="readAvg"></span></div>
+        <dl class="guide">
+          <div><dt>관찰</dt><dd>N이 작으면 평균(주황)이 무게중심(분홍)에서 크게 벗어나기도 합니다. N = 9로 맞춰 보면 점 사이 간격이 0.5초라서, 그 사이에 신호가 1.5번 오르내려 봉우리를 건너뛰어 버립니다. 점을 촘촘하게 고를수록 두 점이 겹칩니다.</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="item" id="i8">
+      <h3><span class="no">3-3</span>진짜 푸리에 변환은 나누지 않습니다</h3>
+      <p class="ask">「거의 푸리에 변환」과 진짜 푸리에 변환은 무엇이 다를까?</p>
+      <div class="prose">
+        <p>남은 차이는 하나입니다. 실제 푸리에 변환은 구간의 길이로 나누지 않습니다. 그러니 무게중심 그 자체가 아니라, <strong>무게중심에 구간의 길이를 곱한 값</strong>입니다. 원래 그래프에서 3초 동안을 봤다면 무게중심 × 3, 6초 동안을 봤다면 무게중심 × 6입니다.</p>
+      </div>
+      <div class="key"><div class="t">핵심 공식 · 푸리에 변환</div><div class="math">\[ \hat g(\cZ{f}) = \int_{t_1}^{t_2} \cW{g(t)}\,\cJ{e^{-2\pi i f t}}\,dt \]</div></div>
+      <ul class="parts">
+        <li><span class="m">\(\cJ{e^{-2\pi i f t}}\)</span><span>1초에 f바퀴 시계 방향으로 도는 화살표. 감는 진동수 f가 이 함수의 입력입니다.</span></li>
+        <li><span class="m">\(\cW{g(t)}\,\cJ{e^{-2\pi i f t}}\)</span><span>신호를 곱해 화살표 길이를 바꾼 것. 감긴 그래프입니다.</span></li>
+        <li><span class="m">\(\int \ldots dt\)</span><span>감긴 그래프 위의 점을 모두 더한 것. 무게중심 × 구간의 길이입니다.</span></li>
+        <li><span class="m">\(\hat g(\cZ{f})\)</span><span>결과는 새 함수입니다. 시간이 아니라 진동수를 넣으면, 그 진동수가 신호 안에 얼마나 세게 들어 있는지를 복소수 하나(평면 위의 점 하나)로 돌려줍니다. 기호 위의 꺾쇠(^)는 「g를 변환한 것」이라는 표시이고, g햇이라고 부릅니다.</span></li>
+      </ul>
+      <div class="prose">
+        <p>나누지 않으면 무엇이 달라질까요? 감는 진동수가 신호의 진동수와 일치하면 무게중심은 구간이 길어져도 그 자리에 머뭅니다. 그런데 거기에 길이를 곱하니, <strong>신호가 오래 이어질수록 그 진동수에서의 값이 점점 커집니다.</strong> 반면 일치하지 않는 진동수에서는 감긴 그래프가 원을 돌며 서로 상쇄되어, 시간이 지나도 크기가 일정한 범위를 넘지 않습니다. 결과적으로 봉우리는 높아지고 동시에 좁아집니다.</p>
+        <p class="note">ĝ(f)의 값은 신호의 단위(전압, 압력)와 진폭, 관찰 시간, 그리고 정규화 방식에 따라 크기가 달라집니다. 그래서 봉우리의 높이는 「그 진동수 성분이 다른 진동수보다 얼마나 센가」를 비교하는 상대적인 값으로 읽어야 합니다. 이 그림의 폭 2/T는 구간을 잘라 그대로 쓴 경우(직사각형 창)에서 봉우리 양옆의 첫 0 사이를 잰 값입니다.</p>
+      </div>
+      <div class="stage">
+        <div class="cap">위: 2 Hz 신호와 관찰 구간(초록) · 아래: 감는 진동수에 따른 결과의 실수부</div>
+        <canvas id="cvDur" aria-label="관찰 구간 길이에 따른 푸리에 변환의 봉우리"></canvas>
+        <div class="controls">
+          <label for="tDur">관찰 구간</label><input type="range" id="tDur" min="5" max="80" step="1" value="20"><span class="val" id="valDur"></span>
+        </div>
+        <div class="controls choice"><span class="lbl">세로축</span>
+          <button type="button" class="alt" id="durC" aria-pressed="false">무게중심 (구간 길이로 나눔)</button>
+          <button type="button" class="alt" id="durF" aria-pressed="true">푸리에 변환 (나누지 않음)</button>
+        </div>
+        <div class="status"><span class="read lines" id="readDur"></span></div>
+        <dl class="guide">
+          <div><dt>관찰</dt><dd>구간을 늘리면 2에서의 봉우리가 구간 길이에 비례해 높아지고, 봉우리 양옆의 첫 0 사이 폭은 2/(구간 길이)로 좁아집니다. 「무게중심」으로 바꾸면 높이는 0.5로 그대로이고 폭만 좁아집니다.</dd></div>
+        </dl>
+      </div>
+      <div class="prose">
+        <p class="sub">적분 구간</p>
+        <p>무선 신호를 처리할 때처럼 실제로는 정해진 시간 구간에서 적분합니다. 이론에서는 구간을 음의 무한대에서 양의 무한대까지 잡기도 하는데, 이것은 구간을 한없이 넓혀 갈 때의 극한을 뜻합니다.</p>
+        <div class="math">\[ \hat g(f) = \int_{-\infty}^{\infty} g(t)\,e^{-2\pi i f t}\,dt \]</div>
+        <p class="sub">거꾸로 돌아가는 길</p>
+        <p>진동수마다의 세기 ĝ(f)를 알면 원래 신호 g(t)를 다시 만들 수도 있습니다. 진동수마다 그 세기만큼의 회전 화살표를 모두 더하면 되고, 이것을 <strong>역 푸리에 변환</strong>이라 합니다. 지수의 부호만 + 로 바뀐 거의 같은 모양입니다. 4-5에서 이 왕복을 실제로 써 봅니다.</p>
+        <div class="math">\[ g(t) = \int_{-\infty}^{\infty} \hat g(f)\,e^{+2\pi i f t}\,df \]</div>
+      </div>
+      <div class="ex">
+        <div class="t">예제</div>
+        <p>2 Hz로 진동하는 g(t) = cos(2π·2t)를 3초 동안 관찰한 경우와 6초 동안 관찰한 경우, 2에서의 봉우리 높이(실수부)와 봉우리의 폭(양옆 첫 0 사이)은 각각 얼마입니까?</p>
+        <details><summary><span class="o">풀이 보기</span><span class="c">풀이 접기</span></summary>
+          <div class="sol"><p>진동수가 일치하면 무게중심의 x좌표는 세기 1의 절반인 0.5이고, 푸리에 변환은 여기에 구간 길이를 곱합니다. 3초면 1.5, 6초면 3.0입니다.</p><p>폭은 2/(구간 길이)이므로 3초면 0.67 Hz, 6초면 0.33 Hz입니다. 구간이 두 배가 되면 봉우리는 두 배 높아지고 폭은 절반이 됩니다. 이 「길게 볼수록 진동수가 또렷해진다」는 사실이 4-3의 대역폭 이야기로 이어집니다.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section class="scene" id="s4">
+    <div class="tag">4 · 무전기 안의 푸리에 변환</div>
+    <h2>수신기는 감는 기계입니다</h2>
+
+    <div class="item" id="r1">
+      <h3><span class="no">4-1</span>다이얼은 감는 진동수입니다</h3>
+      <p class="ask">수신기는 밴드에 섞인 수많은 신호 가운데 한 국을 어떻게 골라낼까?</p>
+      <div class="radio">
+        <div class="h">무선에서</div>
+        <div class="prose">
+          <p>3장의 식을 회로로 옮기면 그대로 수신기가 됩니다. 전기공학에서는 전류를 i로 쓰기 때문에 허수 단위를 j로 쓰는데, 뜻은 같습니다.</p>
+        </div>
+        <dl class="terms">
+          <div><dt>국부발진기 LO</dt><dd>수신기 안에서 스스로 만드는 진동. 원어 local oscillator. 다이얼을 돌리면 이 진동수가 바뀝니다.</dd></div>
+          <div><dt>믹서</dt><dd>두 신호를 곱하는 회로. 안테나 신호에 국부발진기를 곱합니다.</dd></div>
+          <div><dt>I와 Q</dt><dd>cos을 곱한 결과(I, 동상 In-phase)와 sin을 곱한 결과(Q, 직교 Quadrature). 두 믹서를 나란히 둔 것이 I/Q 믹서입니다.</dd></div>
+          <div><dt>저역통과 필터</dt><dd>느린 변화만 통과시키고 빠른 진동을 걸러 내는 필터. 원어 low-pass filter, LPF.</dd></div>
+        </dl>
+        <div class="table-wrap"><table class="map">
+          <thead><tr><th></th><th>감기</th><th>무게중심 구하기</th><th>감는 진동수</th></tr></thead>
+          <tbody>
+            <tr><th>수학<small>3장의 식</small></th><td class="c4">e<sup>−j2πft</sup> 곱하기</td><td class="c2">평균(적분)</td><td class="c1">f</td></tr>
+            <tr><th>무선<small>수신기 회로</small></th><td class="c4">믹서 + 국부발진기</td><td class="c2">저역통과 필터</td><td class="c1">다이얼(LO 주파수)</td></tr>
+          </tbody></table></div>
+        <p class="readas">e<sup>−j2πft</sup> = cos(2πft) − j sin(2πft)이므로, 실수부와 허수부를 따로 만드는 cos 믹서와 sin 믹서 두 개가 필요합니다. 그 둘의 출력 I와 Q가 바로 무게중심의 x좌표와 y좌표입니다.</p>
+        <div class="prose">
+          <p>저역통과 필터가 평균을 맡는 이유는 이렇습니다. 감는 진동수가 신호와 어긋나면 감긴 점들은 원을 빠르게 돌며 상쇄됩니다. 시간에 따라 보면 빠르게 진동하는 성분입니다. 필터가 이 빠른 진동을 깎아 내면 평균, 곧 무게중심만 남습니다.</p>
+          <p class="sub">조금 어긋나면 비트음이 됩니다</p>
+          <p>다이얼이 상대국보다 정확히 맞으면 무게중심은 한자리에 멈춥니다(직류). 다이얼이 600 Hz 낮으면, 감는 화살표가 신호보다 1초에 600바퀴 덜 도는 셈이라 무게중심이 1초에 600바퀴씩 천천히 돌아갑니다. 이 회전을 소리로 내면 600 Hz의 「삐―」, 곧 CW의 <strong>비트음</strong>입니다. 다이얼을 돌리면 음 높이가 바뀌고, 딱 맞추면 음이 사라지는(제로 비트) 경험을 그대로 설명합니다.</p>
+          <p class="sub">x좌표만으로는 위아래를 구별할 수 없습니다</p>
+          <p>상대국이 다이얼보다 600 Hz 위에 있으면 무게중심은 시계 반대 방향으로, 600 Hz 아래에 있으면 시계 방향으로 돕니다. 그런데 x좌표(I)만 보면 두 경우 모두 똑같이 오르내리는 cos 모양이라 구별되지 않습니다. y좌표(Q)까지 있어야 회전 방향, 곧 위쪽 신호인지 아래쪽 신호인지를 알 수 있습니다. 3-1에서 「x좌표만 보면 절반을 버린다」고 한 것이 바로 이 이야기이고, SDR이 I와 Q 두 갈래를 쓰는 이유입니다.</p>
+        </div>
+        <div class="stage">
+          <div class="cap">위: 밴드(7.000 ~ 7.040 MHz)와 다이얼 바늘, 필터 통과 범위 · 아래 왼쪽: 무게중심(I, Q)의 회전 · 아래 오른쪽: S미터</div>
+          <canvas id="cvRx" aria-label="수신기 다이얼, 무게중심 회전, S미터"></canvas>
+          <div class="controls">
+            <label for="dRx">다이얼</label><input type="range" id="dRx" min="0" max="4000" step="1" value="1140"><span class="val" id="valRx"></span>
+          </div>
+          <div class="controls">
+            <label for="bwRx">필터 폭</label><select id="bwRx"><option value="500" selected>500 Hz (CW)</option><option value="2400">2.4 kHz (SSB)</option><option value="6000">6 kHz (AM)</option></select>
+            <button type="button" id="audRx"><span class="ic" aria-hidden="true">▶</span>소리 듣기</button>
+            <span class="state">소리: <b id="stRx">꺼짐</b></span>
+          </div>
+          <div class="controls choice zoom"><span class="lbl">위 그림 범위</span>
+            <button type="button" class="alt" id="rxFull" aria-pressed="true">밴드 전체</button>
+            <button type="button" class="alt" id="rxZoom" aria-pressed="false">다이얼 주변 ±3 kHz</button>
+          </div>
+          <div class="controls presets"><span class="lbl">다이얼 맞추기</span>
+            <button type="button" class="alt" data-tune="1140">다이얼: A국 아래 600 Hz</button><button type="button" class="alt" data-tune="1200" data-bw="6000">다이얼 = A국 (AM 필터)</button><button type="button" class="alt" data-tune="1260">다이얼: A국 위 600 Hz</button><button type="button" class="alt" data-tune="3060">다이얼: C국 아래 600 Hz</button>
+          </div>
+          <div class="status"><span class="pill" id="pillRx"></span><span class="read lines" id="readRx"></span></div>
+          <dl class="guide">
+            <div><dt>조작</dt><dd>다이얼 막대를 천천히 옮겨 봅니다. 「소리 듣기」를 켜면 필터를 통과한 신호가 비트음으로 납니다. 화면의 회전은 눈으로 볼 수 있게 실제보다 400배 느리게 그렸습니다. 분홍 띠는 필터가 통과시키는 범위입니다. CW 필터는 다이얼보다 600 Hz 위쪽 둘레만 통과시키므로, 상대국이 다이얼보다 600 Hz 위에 있을 때 600 Hz 비트음으로 들립니다.</dd></div>
+            <div><dt>관찰</dt><dd>「다이얼: A국 위 600 Hz」를 누르면 A국이 다이얼보다 아래가 되어 CW 필터에서 사라집니다. 필터를 6 kHz(AM)로 넓히면 다시 들리는데, 소리는 똑같이 600 Hz이고 무게중심이 도는 방향만 반대입니다. 필터를 2.4 kHz(SSB)로 넓히면 A국보다 450 Hz 위의 B국도 함께 들어와, 두 화살표가 더해져 흔들리고 소리도 두 음이 겹칩니다.</dd></div>
+          </dl>
+        </div>
+        <div class="prose">
+          <p>요즘 무전기의 대부분은 안테나 신호를 먼저 중간주파수로 옮긴 뒤(슈퍼헤테로다인) 다시 같은 일을 하거나, SDR처럼 안테나 신호를 바로 I와 Q로 만듭니다. 어느 쪽이든 「국부발진기를 곱해 감고, 필터로 평균 낸다」는 뼈대는 같습니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="r2">
+      <h3><span class="no">4-2</span>밴드스코프와 워터폴은 FFT 그림입니다</h3>
+      <p class="ask">밴드 전체의 신호를 한 화면에 그리려면?</p>
+      <div class="radio">
+        <div class="h">무선에서</div>
+        <div class="prose">
+          <p>4-1의 수신기는 감는 진동수 하나에서 무게중심 하나를 봅니다. 밴드스코프는 감는 진동수를 수백 개 한꺼번에 놓고, 진동수마다의 크기를 가로로 늘어놓아 그립니다. 2-2의 세 번째 그래프와 똑같은 그림입니다.</p>
+          <p>SDR은 안테나 신호를 일정한 간격으로 재서 숫자 N개로 바꾼 뒤(표본화), 3-2의 「점 N개로 어림한 무게중심」을 감는 진동수마다 계산합니다. 이것을 이산 푸리에 변환이라 하고, 이 계산을 아주 빠르게 해내는 방법이 <strong>FFT</strong>(fast Fourier transform, 빠른 푸리에 변환)입니다. 점이 N개면 진동수 칸도 N개 생기고, 칸 사이 간격은 (1초에 재는 횟수) ÷ N입니다.</p>
+          <p><strong>워터폴</strong>은 FFT를 한 번 할 때마다 그 결과를 색깔 한 줄로 그리고, 새 줄을 위에 얹어 아래로 흘려보낸 그림입니다. 가로가 진동수, 세로가 시간, 색이 세기입니다.</p>
+        </div>
+        <div class="stage">
+          <div class="cap">14.074 MHz에 맞춘 수신기의 오디오(0 ~ 3 kHz)를 FFT로 그린 화면. 위: 밴드스코프 · 아래: 워터폴</div>
+          <canvas id="cvWf" aria-label="FFT로 그린 밴드스코프와 워터폴"></canvas>
+          <div class="controls">
+            <button type="button" id="pWf"><span class="ic" aria-hidden="true">▶</span>흘려보내기</button>
+            <span class="state">상태: <b id="stWf">멈춤</b></span>
+          </div>
+          <div class="status"><span class="read lines" id="readWf"></span></div>
+          <dl class="guide">
+            <div><dt>관찰</dt><dd>일정한 간격으로 켜졌다 꺼지는 좁은 막대들이 FT8 신호입니다. 막대 하나의 폭은 약 50 Hz이고, 15초 주기마다 짝수 주기와 홀수 주기에 서로 다른 국이 번갈아 송신합니다. 800 Hz 근처에서 끊어졌다 이어지는 줄은 CW입니다. 이 화면의 신호는 모의로 만든 것입니다.</dd></div>
+          </dl>
+        </div>
+        <div class="prose">
+          <p>3-2에서 점이 너무 드물면 봉우리를 건너뛴다는 것을 보았습니다. SDR에서도 같은 일이 생깁니다. 1초에 재는 횟수가 신호 진동수의 두 배보다 적으면 높은 진동수가 낮은 진동수인 척 끼어듭니다(앨리어싱). 그래서 SDR은 받으려는 대역폭보다 두 배 넘게 빨리 잽니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="r3">
+      <h3><span class="no">4-3</span>짧은 신호는 넓게 퍼집니다</h3>
+      <p class="ask">CW를 빠르게 치거나 날카롭게 끊으면 왜 옆 주파수까지 번질까?</p>
+      <div class="radio">
+        <div class="h">무선에서</div>
+        <div class="prose">
+          <p>3-3에서 관찰 구간이 T초이면 봉우리의 폭이 2/T Hz라는 것을 보았습니다. 신호가 이어지는 시간이 짧을수록 진동수 쪽의 봉우리가 넓게 퍼진다는 뜻입니다. 길이가 0.1초인 신호는 진동수가 아무리 정확해도 폭 20 Hz쯤으로 번져 보입니다. 더 일반적으로, 관찰 구간이 짧을수록 스펙트럼은 넓어집니다. 신호처리에서 이 관계를 불확정성 원리라 부르기도 하는데, 두 폭의 곱에 대한 정확한 하한은 「폭」을 어떻게 정의하고 어떤 창(구간을 자르는 모양)을 쓰느냐에 따라 달라집니다. 여기서 쓰는 2/T는 직사각형 창에서 첫 0 사이를 잰 값입니다.</p>
+          <p>CW의 점(dit) 하나는 반송파를 짧게 켰다 끈 것입니다. 표준 단어 PARIS를 기준으로 점의 길이는 1200 ÷ WPM 밀리초이므로, 20 WPM이면 60 ms, 40 WPM이면 30 ms입니다. 빨리 칠수록 신호가 짧아지고, 그만큼 점유 대역이 넓어집니다.</p>
+          <p>켜고 끄는 가장자리도 중요합니다. 반송파를 순식간에 켜고 끄면 가장자리가 아주 짧은 사건이라 진동수 쪽으로 매우 넓게 퍼집니다. 이것이 이웃 주파수에서 「딱딱」 들리는 <strong>키 클릭</strong>입니다. 그래서 송신기는 켜고 끌 때 몇 ms에 걸쳐 부드럽게 오르내리게 합니다.</p>
+        </div>
+        <div class="stage">
+          <div class="cap">위: CW 점들의 세기(포락선) · 아래: 그 신호의 진동수 분포(반송파 기준, 세로 dB)</div>
+          <canvas id="cvBw" aria-label="CW 키잉 모양과 진동수 분포"></canvas>
+          <div class="controls">
+            <label for="wpmBw">속도</label><input type="range" id="wpmBw" min="5" max="40" step="1" value="20"><span class="val" id="valBw"></span>
+          </div>
+          <div class="controls choice"><span class="lbl">키잉 가장자리</span>
+            <button type="button" class="alt" id="bwHard" aria-pressed="true">각지게 (순간)</button>
+            <button type="button" class="alt" id="bwSoft" aria-pressed="false">부드럽게 (5 ms)</button>
+          </div>
+          <div class="status"><span class="read lines" id="readBw"></span></div>
+          <dl class="guide">
+            <div><dt>관찰</dt><dd>속도를 올리면 가운데 봉우리가 넓어집니다. 「각지게」에서는 봉우리 양옆으로 넓은 치맛자락이 −40 dB, −60 dB까지 길게 이어집니다. 「부드럽게」로 바꾸면 치맛자락이 급히 떨어집니다.</dd></div>
+          </dl>
+        </div>
+        <div class="ex">
+          <div class="t">무선 예제</div>
+          <p>FT8은 한 심볼(톤 하나를 내는 시간)이 0.16초이고, 톤 8개를 바꿔 가며 보냅니다. 이웃한 톤의 간격은 몇 Hz로 정하는 것이 알맞고, 신호 전체의 폭은 얼마입니까?</p>
+          <details><summary><span class="o">풀이 보기</span><span class="c">풀이 접기</span></summary>
+            <div class="sol"><p>0.16초 동안 이어지는 톤의 봉우리는 양옆의 첫 0이 중심에서 1/0.16 = 6.25 Hz 떨어진 곳에 있습니다(3-3의 첫 0 사이 폭 2/T의 절반). 이웃 톤의 중심을 바로 이 첫 0 자리에 두면, 한 톤을 재는 동안 이웃 톤의 몫이 정확히 0이 되어 서로 간섭하지 않습니다. 이것을 직교성이라 하고, 그래서 FT8의 톤 간격은 6.25 Hz입니다.</p><p>톤 8개의 중심 가운데 가장 낮은 것과 가장 높은 것의 간격은 7칸, 곧 7 × 6.25 = 43.75 Hz입니다. 여기에 바깥 톤들이 양옆으로 퍼지는 몫을 더해 FT8의 점유 대역폭은 통상 약 50 Hz로 봅니다. 심볼을 길게 잡았기 때문에 톤 간격을 좁게 할 수 있었고, 덕분에 아주 좁은 폭으로 약한 신호를 주고받습니다. 대신 한 번 송신에 12.64초가 걸립니다.</p></div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="r4">
+      <h3><span class="no">4-4</span>변조하면 측파대가 생깁니다</h3>
+      <p class="ask">AM 신호는 왜 반송파 양옆으로 폭을 차지할까?</p>
+      <div class="radio">
+        <div class="h">무선에서</div>
+        <div class="prose">
+          <p>AM은 반송파의 세기를 음성에 맞춰 흔드는 방식입니다. 반송파 진동수를 f<sub>c</sub>, 음성 대신 쓰는 한 가지 음의 진동수를 f<sub>m</sub>, 흔드는 정도를 m이라 하면 신호는 (1 + m cos 2πf<sub>m</sub>t) cos 2πf<sub>c</sub>t입니다. 시간 그래프로는 반송파 하나가 커졌다 작아졌다 하는 모양이지만, 이 신호를 감는 기계에 넣으면 봉우리가 셋 나옵니다. 삼각함수의 곱을 합으로 바꾸는 공식 때문입니다.</p>
+        </div>
+        <div class="key"><div class="t">곱을 합으로</div><div class="math">\[ \cos A\cos B = \tfrac12\cos(A+B) + \tfrac12\cos(A-B) \]</div></div>
+        <div class="math">\[ (1+m\cos 2\pi f_m t)\cos 2\pi f_c t = \cos 2\pi f_c t + \tfrac{m}{2}\cos 2\pi(\cZ{f_c+f_m})t + \tfrac{m}{2}\cos 2\pi(\cC{f_c-f_m})t \]</div>
+        <div class="prose">
+          <p>반송파 f<sub>c</sub> 하나와, 그 위아래로 f<sub>m</sub>만큼 떨어진 두 진동이 있습니다. 위쪽을 <strong>윗측파대</strong>(USB), 아래쪽을 <strong>아랫측파대</strong>(LSB)라 합니다. 음성은 여러 진동수의 합이므로 측파대도 띠 모양으로 펼쳐지고, AM 신호의 폭은 음성의 가장 높은 진동수의 두 배가 됩니다.</p>
+          <p>반송파에는 정보가 없고 두 측파대는 같은 정보를 거울처럼 나눠 가집니다. 반송파와 한쪽 측파대를 버리고 남은 한쪽에만 전력을 모은 것이 <strong>SSB</strong>입니다. 폭은 AM의 절반이 되고, 같은 송신 전력이라도 정보에 쓰이는 몫이 훨씬 커집니다.</p>
+        </div>
+        <div class="stage">
+          <div class="cap">위: 시간 그래프(반송파는 보기 쉽게 실제보다 느리게 그림) · 아래: 진동수 분포(반송파 기준)</div>
+          <canvas id="cvAm" aria-label="변조 방식에 따른 시간 그래프와 진동수 분포"></canvas>
+          <div class="controls choice" id="modeAm"><span class="lbl">방식</span>
+            <button type="button" class="alt" data-mode="am" aria-pressed="true">AM</button>
+            <button type="button" class="alt" data-mode="dsb" aria-pressed="false">반송파 없앤 DSB</button>
+            <button type="button" class="alt" data-mode="usb" aria-pressed="false">SSB (USB)</button>
+          </div>
+          <div class="controls">
+            <label for="fmAm">음의 진동수 f<sub>m</sub></label><input type="range" id="fmAm" min="3" max="30" step="1" value="10"><span class="val" id="valAm"></span>
+          </div>
+          <div class="status"><span class="read lines" id="readAm"></span></div>
+        </div>
+        <div class="ex">
+          <div class="t">무선 예제</div>
+          <p>음성의 가장 높은 진동수를 3 kHz로 제한했을 때 AM과 SSB의 점유 대역폭은 각각 얼마입니까? 7.200 MHz에 USB로 맞추면 3 kHz 음은 몇 MHz에 나옵니까?</p>
+          <details><summary><span class="o">풀이 보기</span><span class="c">풀이 접기</span></summary>
+            <div class="sol"><p>AM은 위아래로 3 kHz씩이라 6 kHz, SSB는 한쪽만이라 3 kHz입니다. USB는 반송파보다 위쪽이므로 3 kHz 음은 7.200 + 0.003 = 7.203 MHz에 나옵니다. LSB였다면 7.197 MHz입니다.</p></div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <div class="item" id="r5">
+      <h3><span class="no">4-5</span>노치 필터: 변환하고, 지우고, 되돌리기</h3>
+      <p class="ask">음성에 섞인 「삐―」 하는 방해음만 지우려면?</p>
+      <div class="radio">
+        <div class="h">무선에서</div>
+        <div class="prose">
+          <p>SSB 교신 중에 누군가 튜닝하는 반송파가 끼어들면 일정한 높이의 「삐―」 소리가 납니다. 시간 그래프에서는 음성과 방해음이 뒤엉켜 무엇이 방해음인지 알 수 없지만, 푸리에 변환을 하면 방해음은 한 진동수에 우뚝 선 좁은 봉우리로 드러납니다.</p>
+          <p>DSP 무전기의 <strong>노치 필터</strong>는 그 봉우리만 깎아 낸 뒤, 3-3의 역 푸리에 변환으로 시간 그래프를 다시 만듭니다. 음성은 넓은 진동수에 퍼져 있으므로 좁은 칸 몇 개를 지워도 거의 손상되지 않습니다. 일부 DSP 잡음 감소 방식도 진동수 칸마다 신호인지 잡음인지를 어림해 잡음 쪽 칸을 줄이는, 같은 뼈대를 씁니다.</p>
+        </div>
+        <div class="stage">
+          <div class="cap">위: 시간 그래프(0.1초 구간) · 아래: 진동수 분포(세로 dB). 분홍 띠가 노치 필터가 지우는 칸</div>
+          <canvas id="cvNf" aria-label="노치 필터 전후의 시간 그래프와 진동수 분포"></canvas>
+          <div class="controls">
+            <button type="button" class="alt" id="nfOn" aria-pressed="false">노치 필터 켜기</button>
+            <button type="button" id="nfPlay"><span class="ic" aria-hidden="true">▶</span>소리 듣기</button>
+            <span class="state">필터: <b id="stNf">꺼짐</b></span>
+          </div>
+          <div class="status"><span class="read lines" id="readNf"></span></div>
+          <dl class="guide">
+            <div><dt>관찰</dt><dd>필터를 켜고 끄며 소리를 들어 봅니다. 소리는 음성 대신 낮은 「아―」 소리를 흉내 낸 모의 신호이고, 1755 Hz의 방해음이 섞여 있습니다.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 정리 ================= -->
+  <section class="scene" id="sum">
+    <div class="tag">정리</div>
+    <h2>원에 감고, 무게중심을 보고, 길이를 곱합니다</h2>
+    <div class="prose">
+      <p>푸리에 변환은 신호를 감는 진동수 f로 원에 감고, 감긴 그래프의 무게중심에 구간의 길이를 곱한 것입니다. 감는 빠르기가 신호 안의 진동과 맞을 때만 그 진동이 한쪽으로 몰려 큰 값이 나옵니다. 무전기는 이 일을 회로와 숫자로 매 순간 하고 있습니다.</p>
+    </div>
+    <div class="table-wrap"><table class="map">
+      <thead><tr><th>푸리에 변환에서</th><th>무선에서</th></tr></thead>
+      <tbody>
+        <tr><td class="l">감는 진동수 f</td><td class="l">다이얼, 국부발진기 주파수</td></tr>
+        <tr><td class="l">회전 화살표 e<sup>−j2πft</sup>를 곱하기</td><td class="l">믹서</td></tr>
+        <tr><td class="l">무게중심의 x좌표, y좌표</td><td class="l">I 신호, Q 신호</td></tr>
+        <tr><td class="l">평균 내기(적분)</td><td class="l">저역통과 필터</td></tr>
+        <tr><td class="l">무게중심의 느린 회전</td><td class="l">CW 비트음 (제로 비트에서 멈춤)</td></tr>
+        <tr><td class="l">진동수마다의 크기 그래프</td><td class="l">밴드스코프, 워터폴 (FFT)</td></tr>
+        <tr><td class="l">관찰 구간이 짧으면 봉우리가 넓음</td><td class="l">빠른 키잉·날카로운 가장자리는 대역이 넓음 (키 클릭)</td></tr>
+        <tr><td class="l">곱을 합으로 바꾸면 봉우리가 갈라짐</td><td class="l">측파대 (AM, SSB)</td></tr>
+        <tr><td class="l">변환 → 칸 지우기 → 역변환</td><td class="l">노치 필터, 일부 잡음 감소 방식</td></tr>
+      </tbody></table></div>
+  </section>
+
+  <footer>
+    <p>그림 속 신호(2 ~ 5 Hz의 느린 진동, 7 MHz 대의 A·B·C국, FT8 워터폴, 음성과 방해음)는 원리를 보이기 위해 만든 모의 신호입니다.</p>
+    <p>전기·무선에서는 허수 단위를 j로 쓰고, 수학에서는 i로 씁니다. 이 페이지는 1 ~ 3장에서 i, 4장에서 j를 썼습니다.</p>
+  </footer>
+</main>
+<script>
+(function(){
+  const root = getComputedStyle(document.documentElement);
+  const K = n => root.getPropertyValue(n).trim();
+  const COL = {pi:K('--pi'), f:K('--f'), w:K('--w'), j:K('--j'), r:K('--r'), l:K('--l'), c:K('--c'), fg:K('--fg'), muted:K('--muted'), line:K('--line'), screen:K('--screen'), soft:K('--soft')};
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TAU = Math.PI*2;
+  const SANS = '"IBM Plex Sans KR", system-ui, sans-serif';
+  const MATHF = '"Times New Roman", "STIX Two Math", serif';
+  const $ = id => document.getElementById(id);
+
+  function fit(cv, h){
+    const w = cv.parentElement.clientWidth || 300;
+    const d = window.devicePixelRatio || 1;
+    const tw = Math.round(w*d), th = Math.round(h*d);
+    if (cv.width !== tw || cv.height !== th){ cv.width = tw; cv.height = th; cv.style.height = h + 'px'; }
+    const g = cv.getContext('2d');
+    g.setTransform(d,0,0,d,0,0);
+    g.clearRect(0,0,w,h);
+    return {g, w, h, d};
+  }
+  function seg(g,x0,y0,x1,y1,c,lw,dash){ g.save(); g.strokeStyle=c; g.lineWidth=lw||1; g.lineCap='round'; if(dash) g.setLineDash(dash); g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke(); g.restore(); }
+  function arrow(g,x0,y0,x1,y1,c,lw){
+    lw = lw||2.5; const a=Math.atan2(y1-y0,x1-x0), L=Math.hypot(x1-x0,y1-y0); if (L<2) return;
+    const hl=Math.min(12, L*0.45);
+    g.save(); g.strokeStyle=c; g.fillStyle=c; g.lineWidth=lw; g.lineCap='round';
+    g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1-Math.cos(a)*hl*0.7, y1-Math.sin(a)*hl*0.7); g.stroke();
+    g.beginPath(); g.moveTo(x1,y1); g.lineTo(x1-hl*Math.cos(a-0.38), y1-hl*Math.sin(a-0.38)); g.lineTo(x1-hl*Math.cos(a+0.38), y1-hl*Math.sin(a+0.38)); g.closePath(); g.fill();
+    g.restore();
+  }
+  function text(g,s,x,y,c,o){
+    o=o||{}; g.save(); g.fillStyle=c||COL.fg;
+    g.font = o.math ? ((o.italic===false?'':'italic ')+(o.size||16)+'px '+MATHF) : ((o.weight||'500')+' '+(o.size||13)+'px '+SANS);
+    g.textAlign=o.align||'left'; g.textBaseline=o.base||'middle';
+    if (o.halo){ g.lineWidth=4; g.strokeStyle=o.halo; g.lineJoin='round'; g.strokeText(s,x,y); }
+    g.fillText(s,x,y); g.restore();
+  }
+  function dot(g,x,y,r,c,ring){ g.save(); g.fillStyle=c; g.beginPath(); g.arc(x,y,r,0,TAU); g.fill(); if(ring){g.strokeStyle=ring; g.lineWidth=2; g.stroke();} g.restore(); }
+  function frame(w,h,x0,x1,y0,y1,pad){
+    pad = Object.assign({l:50,r:18,t:18,b:40}, pad||{});
+    const X = x => pad.l + (x-x0)/(x1-x0)*(w-pad.l-pad.r);
+    const Y = y => h - pad.b - (y-y0)/(y1-y0)*(h-pad.t-pad.b);
+    return {X, Y, l:pad.l, r:w-pad.r, t:pad.t, b:h-pad.b};
+  }
+  function axes(g,F,xt,yt,xl,yl){
+    xt.forEach(([v]) => seg(g,F.X(v),F.t,F.X(v),F.b,COL.line,1));
+    yt.forEach(([v]) => seg(g,F.l,F.Y(v),F.r,F.Y(v),COL.line,1));
+    seg(g,F.l,F.b,F.r,F.b,COL.muted,1.2); seg(g,F.l,F.t,F.l,F.b,COL.muted,1.2);
+    xt.forEach(([v,s]) => text(g,s,F.X(v),F.b+13,COL.muted,{size:11.5,align:'center'}));
+    yt.forEach(([v,s]) => text(g,s,F.l-7,F.Y(v),COL.muted,{size:11.5,align:'right'}));
+    if (xl) text(g,xl,F.r,F.b+30,COL.muted,{size:12,align:'right'});
+    if (yl) text(g,yl,F.l+8,F.t+2,COL.muted,{size:12,align:'left',halo:COL.screen});
+  }
+  function clipF(g,F){ g.save(); g.beginPath(); g.rect(F.l,F.t-2,F.r-F.l,F.b-F.t+2); g.clip(); }
+  const num = (v,d) => { d = d==null?1:d; const s = Math.abs(v).toFixed(d); return (v<0 && +s!==0 ? '−' : '') + s; };
+  const sq = v => v<0 ? '(−'+(-v)+')²' : v+'²';
+  const draws = [];
+  function reg(fn){ draws.push(fn); fn(); }
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => draws.forEach(f => f()), 80); });
+
+  /* ================= 공통: 신호, 무게중심, FFT ================= */
+  const T0 = 4.5;
+  const SIGS = {
+    p3:   t => 0.5 + 0.5*Math.cos(TAU*3*t),
+    c3:   t => 0.5*Math.cos(TAU*3*t),
+    c2:   t => 0.5*Math.cos(TAU*2*t),
+    c23:  t => 0.5*Math.cos(TAU*2*t) + 0.5*Math.cos(TAU*3*t),
+    c235: t => 0.3*Math.cos(TAU*2*t) + 0.5*Math.cos(TAU*3*t) + 0.2*Math.cos(TAU*4.5*t)
+  };
+  const PEAKS = {p3:[0,3], c3:[3], c2:[2], c23:[2,3], c235:[2,3,4.5]};
+  const SIGNAME = {p3:'3 Hz, 위로 치우침', c3:'3 Hz, 0 중심', c2:'2 Hz', c23:'2 Hz + 3 Hz', c235:'2 + 3 + 4.5 Hz'};
+  /* 감긴 그래프의 무게중심: 0 ~ tEnd 구간의 g(t)·e^(−2πift) 평균 */
+  function com(sg, f, tEnd, n){
+    tEnd = tEnd == null ? T0 : tEnd; n = n || 1500;
+    if (tEnd <= 0) return [sg(0), 0];
+    let x = 0, y = 0; const dt = tEnd/n;
+    for (let k = 0; k < n; k++){ const t = (k+0.5)*dt, v = sg(t), a = TAU*f*t; x += v*Math.cos(a); y -= v*Math.sin(a); }
+    return [x/n, y/n];
+  }
+  const curves = {};
+  function comCurve(key){
+    if (!curves[key]){ const a = new Float64Array(501); for (let i = 0; i <= 500; i++) a[i] = com(SIGS[key], i/100)[0]; curves[key] = a; }
+    return curves[key];
+  }
+  function fft(re, im, inv){
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++){
+      let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit;
+      if (i < j){ let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    for (let len = 2; len <= n; len <<= 1){
+      const ang = (inv ? 2 : -2)*Math.PI/len, wr = Math.cos(ang), wi = Math.sin(ang), half = len >> 1;
+      for (let i = 0; i < n; i += len){
+        let cr = 1, ci = 0;
+        for (let j = 0; j < half; j++){
+          const a = i+j, b = a+half, tr = re[b]*cr - im[b]*ci, ti = re[b]*ci + im[b]*cr;
+          re[b] = re[a]-tr; im[b] = im[a]-ti; re[a] += tr; im[a] += ti;
+          const nr = cr*wr - ci*wi; ci = cr*wi + ci*wr; cr = nr;
+        }
+      }
+    }
+    if (inv) for (let i = 0; i < n; i++){ re[i] /= n; im[i] /= n; }
+  }
+  function onVis(el, cb){
+    if (!('IntersectionObserver' in window)){ cb(true); return; }
+    new IntersectionObserver(es => es.forEach(e => cb(e.isIntersecting)), {threshold: 0}).observe(el);
+  }
+  function setPressed(btns, on){ btns.forEach(b => b.setAttribute('aria-pressed', b === on ? 'true' : 'false')); }
+  function playLabel(btn, playing, a, b){ btn.dataset.on = playing ? '1' : '0'; btn.innerHTML = playing ? '<span class="ic" aria-hidden="true">❚❚</span>' + (b || '멈추기') : '<span class="ic" aria-hidden="true">▶</span>' + a; }
+  function path(g, pts, c, lw, alpha){
+    if (pts.length < 2) return;
+    g.save(); g.strokeStyle = c; g.lineWidth = lw || 2; g.lineJoin = 'round'; g.lineCap = 'round'; if (alpha != null) g.globalAlpha = alpha;
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.stroke(); g.restore();
+  }
+  function cross(g, x, y, c, s){ seg(g, x-s, y-s, x+s, y+s, c, 3); seg(g, x-s, y+s, x+s, y-s, c, 3); }
+  /* 감긴 그래프 판: 중심 (cx, cy), 반지름 R(세기 1) */
+  function polarBase(g, cx, cy, R, lab){
+    for (const v of [-1, -0.5, 0.5, 1]){ seg(g, cx+v*R, cy-R-8, cx+v*R, cy+R+8, COL.line, 1); seg(g, cx-R-8, cy+v*R, cx+R+8, cy+v*R, COL.line, 1); }
+    seg(g, cx-R-12, cy, cx+R+12, cy, COL.muted, 1.2); seg(g, cx, cy-R-12, cx, cy+R+12, COL.muted, 1.2);
+    g.save(); g.strokeStyle = COL.muted; g.lineWidth = 1; g.setLineDash([4, 4]); g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.stroke(); g.restore();
+    if (lab){ text(g, '1', cx+R+3, cy+10, COL.muted, {size: 11}); text(g, '−1', cx-R-3, cy+10, COL.muted, {size: 11, align: 'right'}); }
+  }
+
+  /* ================= 1-1: 진동 더하기 ================= */
+  (function(){
+    const cv = $('cvMix'); if (!cv) return;
+    const box = $('mixBtns'), out = $('readMix');
+    const btns = [...box.querySelectorAll('[data-hz]')];
+    const CC = [COL.w, COL.l, COL.j, COL.c];
+    function draw(){
+      const on = btns.filter(b => b.getAttribute('aria-pressed') === 'true').map(b => +b.dataset.hz);
+      const rows = 4, rh = 46, top = 132;
+      const {g, w, h} = fit(cv, top + rows*rh + 8);
+      const x0 = 34, x1 = w - 12, sx = (x1-x0)/2;   /* 2초 구간 */
+      const X = t => x0 + t*sx;
+      /* 합 */
+      const cy = 64, A = 26;
+      seg(g, x0, cy, x1, cy, COL.muted, 1);
+      for (let s = 0; s <= 2; s += 0.5) seg(g, X(s), 8, X(s), top + rows*rh, COL.line, 1);
+      text(g, '합', 6, cy, COL.fg, {size: 13, weight: '700'});
+      const pts = [];
+      for (let i = 0; i <= 800; i++){ const t = i/800*2; let v = 0; on.forEach(f => v += Math.cos(TAU*f*t)); pts.push([X(t), cy - v*A/1.4]); }
+      g.save(); g.beginPath(); g.rect(x0-2, 4, x1-x0+4, 120); g.clip(); path(g, pts, COL.fg, 2.6); g.restore();
+      text(g, '0초', X(0), top + rows*rh - 2, COL.muted, {size: 11, align: 'left', base: 'bottom'});
+      text(g, '1초', X(1), top + rows*rh - 2, COL.muted, {size: 11, align: 'center', base: 'bottom'});
+      text(g, '2초', X(2), top + rows*rh - 2, COL.muted, {size: 11, align: 'right', base: 'bottom'});
+      /* 성분 */
+      [2, 3, 4, 5].forEach((f, k) => {
+        const yc = top + k*rh + rh/2 - 6, act = on.indexOf(f) >= 0;
+        seg(g, x0, yc, x1, yc, COL.line, 1);
+        const p = []; for (let i = 0; i <= 500; i++){ const t = i/500*2; p.push([X(t), yc - Math.cos(TAU*f*t)*14]); }
+        path(g, p, act ? CC[k] : COL.line, act ? 2 : 1.4);
+        text(g, f + ' Hz', 4, yc, act ? CC[k] : COL.muted, {size: 11.5, weight: '600'});
+      });
+      out.innerHTML = on.length
+        ? '<span>더한 진동 ' + on.length + '개: ' + on.map(f => f + ' Hz').join(', ') + '</span><span>합의 값 = 같은 순간의 높이를 모두 더한 값 · 0초에는 모두 꼭대기라 합이 ' + on.length + '</span>'
+        : '<span>더한 진동이 없습니다. 버튼을 눌러 진동을 넣어 보세요.</span>';
+    }
+    btns.forEach(b => b.addEventListener('click', () => { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); draw(); }));
+    reg(draw);
+  })();
+
+  /* ================= 2장: 감는 기계 ================= */
+  function winder(o){
+    const cv = $(o.cv); if (!cv) return;
+    const fS = $(o.f), val = $(o.val), out = $(o.read), pill = $(o.pill);
+    let key = o.sig, pen = null, penRaf = 0, sweepRaf = 0;
+    const penBtn = o.pen && $(o.pen), swBtn = o.sweep && $(o.sweep);
+    function layout(w){
+      const narrow = w < 560, th = narrow ? 104 : 120;
+      if (o.p3){
+        if (narrow){ const s = Math.min(w-16, 300); return {th, P: {x: (w-s)/2, y: th+10, s}, Q: {x: 0, y: th+10+s+8, w, h: 204}, h: th+10+s+8+204}; }
+        const s = Math.min(330, (w-24)*0.46); return {th, P: {x: 4, y: th+12, s}, Q: {x: s+18, y: th+12, w: w-s-20, h: s+10}, h: th+12+s+14};
+      }
+      const s = Math.min(w-16, 340); return {th, P: {x: (w-s)/2, y: th+10, s}, Q: null, h: th+10+s+4};
+    }
+    function draw(){
+      const L = layout(cv.parentElement.clientWidth || 320);
+      const {g, w} = fit(cv, L.h);
+      const f = +fS.value/100, sg = SIGS[key], cen = key[0] === 'c';
+      const yr = cen ? [-1.15, 1.15] : [-0.2, 1.15];
+      /* ① 시간 그래프 */
+      const F = frame(w, L.th, 0, T0, yr[0], yr[1], {l: 34, r: 12, t: 10, b: 22});
+      axes(g, F, [[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4']], cen ? [[-1,'−1'],[0,'0'],[1,'1']] : [[0,'0'],[1,'1']], '', '');
+      text(g, '초', F.r, F.b + 13, COL.muted, {size: 11, align: 'right'});
+      if (f >= 0.1 && T0*f <= 45) for (let k = 1; k <= Math.floor(T0*f + 1e-9); k++){ const x = F.X(k/f); seg(g, x, F.t, x, F.b, COL.j, 1, [3, 4]); }
+      const tp = []; for (let i = 0; i <= 700; i++){ const t = i/700*T0; tp.push([F.X(t), F.Y(sg(t))]); }
+      path(g, tp, COL.w, 2.2);
+      if (pen != null){ const x = F.X(pen); seg(g, x, F.Y(0), x, F.Y(sg(pen)), COL.j, 2.5); dot(g, x, F.Y(sg(pen)), 4.5, COL.j); }
+      /* ② 감긴 그래프 */
+      const P = L.P, cx = P.x + P.s/2, cy = P.y + P.s/2, R = P.s/2 - 14;
+      polarBase(g, cx, cy, R, true);
+      const tEnd = pen == null ? T0 : pen;
+      const n = Math.max(2, Math.round(Math.min(3200, Math.max(700, T0*f*110)) * tEnd/T0));
+      const pp = []; for (let i = 0; i <= n; i++){ const t = i/n*tEnd, v = sg(t), a = TAU*f*t; pp.push([cx + R*v*Math.cos(a), cy + R*v*Math.sin(a)]); }
+      g.save(); g.beginPath(); g.rect(P.x-4, P.y-4, P.s+8, P.s+8); g.clip();
+      path(g, pp, COL.f, 1.7, 0.9);
+      if (pen != null){ const v = sg(pen), a = TAU*f*pen; arrow(g, cx, cy, cx + R*v*Math.cos(a), cy + R*v*Math.sin(a), COL.j, 2.6); }
+      let c = null;
+      if (o.com){
+        c = com(sg, f, tEnd);
+        const mx = cx + R*c[0], my = cy - R*c[1];
+        dot(g, mx, my, 6.5, COL.pi, '#fff');
+        text(g, '무게중심', mx + 10, my - 12, COL.pi, {size: 12, weight: '700', halo: '#fff'});
+      }
+      g.restore();
+      text(g, f.toFixed(2) + ' 바퀴/초', P.x + 4, P.y + 10, COL.fg, {size: 12.5, weight: '700', halo: '#fff'});
+      /* ③ 무게중심의 x좌표 */
+      if (L.Q){
+        const Q = L.Q, cur = comCurve(key);
+        let mn = 0, mx = 0; for (let i = 0; i <= 500; i++){ mn = Math.min(mn, cur[i]); mx = Math.max(mx, cur[i]); }
+        const y0 = Math.min(-0.08, mn*1.25), y1 = mx*1.2 + 0.02;
+        g.save(); g.translate(Q.x, Q.y);
+        const G = frame(Q.w, Q.h, 0, 5, y0, y1, {l: 40, r: 10, t: 22, b: 40});
+        const st = y1 > 0.4 ? 0.25 : 0.1, yt = []; for (let v = Math.ceil(y0/st)*st; v <= y1 + 1e-9; v += st) yt.push([v, num(v, st < 0.2 ? 1 : 2).replace('−0.00','0.00')]);
+        axes(g, G, [[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']], yt, '감는 진동수 [바퀴/초]', '');
+        seg(g, G.l, G.Y(0), G.r, G.Y(0), COL.muted, 1.2);
+        text(g, '③ 무게중심의 x좌표', G.l + 4, 8, COL.pi, {size: 12, weight: '700'});
+        const upto = Math.round(f*100), q = [];
+        for (let i = 0; i <= upto; i++) q.push([G.X(i/100), G.Y(cur[i])]);
+        path(g, q, COL.pi, 2.4);
+        const cxv = c ? c[0] : cur[upto];
+        seg(g, G.X(f), G.t, G.X(f), G.b, COL.muted, 1, [3, 3]);
+        dot(g, G.X(f), G.Y(cxv), 5.5, COL.pi, '#fff');
+        g.restore();
+      }
+      val.textContent = f.toFixed(2) + ' 바퀴/초';
+      const near = PEAKS[key].find(p => Math.abs(f - p) < 0.015);
+      if (pill){
+        if (near === 0){ pill.textContent = '돌지 않음 · 평균값이 그대로'; pill.style.color = COL.w; }
+        else if (near != null){ pill.textContent = '신호의 ' + near + ' Hz와 일치 · 한쪽으로 쏠림'; pill.style.color = COL.pi; }
+        else { pill.textContent = '어긋남 · 상쇄되어 평균이 작음'; pill.style.color = COL.muted; }
+      }
+      let s = '감는 진동수 ' + f.toFixed(2) + ' 바퀴/초 · 한 바퀴 ' + (f > 0.004 ? (1/f).toFixed(2) + '초' : '돌지 않음');
+      if (!o.com && f > 0.004) s += ' · 한 바퀴 동안 신호는 ' + (3/f).toFixed(2) + '번 진동';
+      if (c) s += ' · 무게중심 (' + num(c[0], 3) + ', ' + num(c[1], 3) + ')';
+      out.textContent = s;
+    }
+    function stopPen(){ cancelAnimationFrame(penRaf); pen = null; if (penBtn) playLabel(penBtn, false, '감는 모습 보기'); }
+    if (penBtn) penBtn.addEventListener('click', () => {
+      if (pen != null){ stopPen(); draw(); return; }
+      const t0 = performance.now(), D = reduce ? 1 : 6500; playLabel(penBtn, true, '감는 모습 보기');
+      const step = now => { const u = Math.min(1, (now - t0)/D); pen = u*T0; draw(); if (u < 1) penRaf = requestAnimationFrame(step); else { stopPen(); draw(); } };
+      penRaf = requestAnimationFrame(step);
+    });
+    function stopSweep(){ cancelAnimationFrame(sweepRaf); sweepRaf = 0; if (swBtn) playLabel(swBtn, false, '0부터 5까지 훑기'); }
+    if (swBtn) swBtn.addEventListener('click', () => {
+      if (sweepRaf){ stopSweep(); return; }
+      const t0 = performance.now(), D = reduce ? 1 : 9000; playLabel(swBtn, true, '0부터 5까지 훑기');
+      const step = now => { const u = Math.min(1, (now - t0)/D); fS.value = Math.round(u*500); draw(); if (u < 1) sweepRaf = requestAnimationFrame(step); else stopSweep(); };
+      sweepRaf = requestAnimationFrame(step);
+    });
+    fS.addEventListener('input', e => { if (e.isTrusted) stopSweep(); draw(); });
+    if (o.presets) cv.closest('.stage').querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { stopSweep(); fS.value = b.dataset.f; draw(); }));
+    if (o.sigBtns){
+      const bs = [...cv.closest('.stage').querySelectorAll(o.sigBtns)];
+      bs.forEach(b => b.addEventListener('click', () => { key = b.dataset.sig; setPressed(bs, b); draw(); }));
+    }
+    if (o.upDown){
+      const up = $(o.upDown[0]), dn = $(o.upDown[1]);
+      up.dataset.sig = 'p3'; dn.dataset.sig = 'c3';
+      [up, dn].forEach(b => b.addEventListener('click', () => { key = b.dataset.sig; setPressed([up, dn], b); draw(); }));
+    }
+    reg(draw);
+  }
+  winder({cv: 'cvW1', f: 'fW1', val: 'valW1', read: 'readW1', pill: 'pillW1', pen: 'penW1', sig: 'p3', presets: true});
+  winder({cv: 'cvW2', f: 'fW2', val: 'valW2', read: 'readW2', pill: 'pillW2', sweep: 'swW2', sig: 'p3', com: true, p3: true, upDown: ['upW2', 'ctrW2']});
+  winder({cv: 'cvW3', f: 'fW3', val: 'valW3', read: 'readW3', pill: 'pillW3', sweep: 'swW3', sig: 'c23', com: true, p3: true, sigBtns: '[data-sig]'});
+
+  /* ================= 2-3: 선형성 ================= */
+  (function(){
+    const cv = $('cvLin'); if (!cv) return;
+    const rows = [['c2', '2 Hz', COL.w], ['c3', '3 Hz', COL.l], ['c23', '2 Hz + 3 Hz', COL.fg]];
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560;
+      const rh = narrow ? 74 : 82, gap = 20;
+      const {g, w} = fit(cv, 26 + 3*rh + 2*gap + 6);
+      const lw = (w - 60)*0.46, lx = 8, rx = lx + lw + 52, rw = w - rx - 8;
+      text(g, '신호 (시간)', lx + lw/2, 12, COL.muted, {size: 12, align: 'center', weight: '600'});
+      text(g, '무게중심의 x좌표 (감는 진동수 0 ~ 5)', rx + rw/2, 12, COL.muted, {size: 12, align: 'center', weight: '600'});
+      rows.forEach(([k, lab, c], i) => {
+        const y = 26 + i*(rh + gap), sg = SIGS[k], cur = comCurve(k);
+        g.save(); g.fillStyle = COL.screen; g.strokeStyle = COL.line; g.fillRect(lx, y, lw, rh); g.strokeRect(lx+.5, y+.5, lw-1, rh-1); g.fillRect(rx, y, rw, rh); g.strokeRect(rx+.5, y+.5, rw-1, rh-1); g.restore();
+        const yc = y + rh/2, A = rh*0.42;
+        seg(g, lx+4, yc, lx+lw-4, yc, COL.line, 1);
+        const p = []; for (let j = 0; j <= 500; j++){ const t = j/500*T0; p.push([lx + 4 + t/T0*(lw-8), yc - sg(t)*A]); }
+        path(g, p, c, 1.6);
+        const by = y + rh - 10, sc = (rh - 22)/0.27;
+        seg(g, rx+4, by, rx+rw-4, by, COL.muted, 1);
+        [2, 3].forEach(v => { const x = rx + 4 + v/5*(rw-8); seg(g, x, by, x, by+4, COL.muted, 1); text(g, String(v), x, by + 6, COL.muted, {size: 10, align: 'center', base: 'top'}); });
+        const q = []; for (let j = 0; j <= 500; j++) q.push([rx + 4 + j/500*(rw-8), by - Math.max(-0.02, cur[j])*sc]);
+        path(g, q, COL.pi, 2);
+        text(g, lab, lx + 6, y + 10, c, {size: 12, weight: '700', halo: COL.screen});
+        arrow(g, lx + lw + 8, yc, rx - 8, yc, COL.j, 2);
+        text(g, '변환', (lx + lw + rx)/2, yc - 11, COL.j, {size: 11, align: 'center', weight: '600'});
+        if (i < 2){ const sy = y + rh + gap/2; const s = i === 0 ? '+' : '='; text(g, s, lx + lw/2, sy, COL.fg, {size: 18, align: 'center', weight: '700'}); text(g, s, rx + rw/2, sy, COL.fg, {size: 18, align: 'center', weight: '700'}); }
+      });
+    }
+    reg(draw);
+  })();
+
+  /* ================= 3-1: 도는 화살표 ================= */
+  (function(){
+    const cv = $('cvRot'); if (!cv) return;
+    const fS = $('fRot'), val = $('valRot'), pb = $('pRot'), st = $('stRot'), out = $('readRot');
+    const bA = $('rotA'), bB = $('rotB'), sM = $('sgnM'), sP = $('sgnP');
+    let t = 0.6, mode = 'rot', sgn = -1, playing = false, raf = 0, last = 0;
+    const sg = SIGS.p3;
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, s = Math.min(w0 - 16, 360);
+      const {g, w} = fit(cv, s + 8);
+      const cx = w/2, cy = s/2 + 4, R = s/2 - 34, f = +fS.value/100;
+      polarBase(g, cx, cy, R, false);
+      text(g, '1', cx + R + 4, cy + 11, COL.muted, {size: 12}); text(g, '−1', cx - R - 4, cy + 11, COL.muted, {size: 12, align: 'right'});
+      text(g, 'i', cx + 7, cy - R - 6, COL.muted, {math: true, size: 15}); text(g, '−i', cx + 7, cy + R + 10, COL.muted, {math: true, size: 15});
+      text(g, '실수축', cx + R + 14, cy - 10, COL.muted, {size: 11, align: 'right'});
+      text(g, '허수축', cx + 8, cy - R - 22, COL.muted, {size: 11});
+      const ang = tt => sgn*TAU*f*tt;   /* 복소수의 각 (시계 반대가 +) */
+      const P = (tt, len) => [cx + R*len*Math.cos(ang(tt)), cy - R*len*Math.sin(ang(tt))];
+      if (mode === 'mul'){
+        const n = Math.max(2, Math.round(Math.min(3000, Math.max(600, T0*f*110))*t/T0)), pts = [];
+        for (let i = 0; i <= n; i++){ const tt = i/n*t; pts.push(P(tt, sg(tt))); }
+        path(g, pts, COL.f, 1.7, 0.9);
+        const e = P(t, 1); g.save(); g.globalAlpha = 0.35; arrow(g, cx, cy, e[0], e[1], COL.j, 2); g.restore();
+        const q = P(t, sg(t)); arrow(g, cx, cy, q[0], q[1], COL.w, 3); dot(g, q[0], q[1], 4, COL.w);
+      } else {
+        const a = ang(t), A = ((a % TAU) + TAU) % TAU, ra = 26;
+        g.save(); g.strokeStyle = COL.j; g.lineWidth = 1.6; g.globalAlpha = 0.7; g.beginPath();
+        if (sgn < 0){ g.arc(cx, cy, ra, 0, TAU - A, false); } else { g.arc(cx, cy, ra, 0, -A, true); }
+        g.stroke(); g.restore();
+        const e = P(t, 1); arrow(g, cx, cy, e[0], e[1], COL.j, 3); dot(g, e[0], e[1], 4, COL.j);
+        seg(g, e[0], e[1], e[0], cy, COL.j, 1, [3, 3]); seg(g, e[0], e[1], cx, e[1], COL.j, 1, [3, 3]);
+      }
+      val.textContent = f.toFixed(2) + ' 바퀴/초';
+      const turns = f*t, th = sgn*TAU*f*t, re = Math.cos(th), im = Math.sin(th);
+      const ex = 'e<sup>' + (sgn < 0 ? '−' : '') + '2πift</sup>';
+      const lines = ['t = ' + t.toFixed(2) + '초 · 각 θ = ' + (sgn < 0 ? '−' : '') + '2π × ' + f.toFixed(2) + ' × ' + t.toFixed(2) + ' = ' + num(th, 2) + ' rad (' + (sgn < 0 ? '시계 방향 ' : '시계 반대 방향 ') + turns.toFixed(2) + '바퀴)',
+                     ex + ' = cos θ + i sin θ = ' + num(re, 2) + (im < 0 ? ' − ' : ' + ') + Math.abs(im).toFixed(2) + 'i'];
+      if (mode === 'mul'){ const v = sg(t); lines.push('g(t) = ' + v.toFixed(2) + ' → 점 g(t)·' + ex + ' = ' + num(v*re, 2) + (v*im < 0 ? ' − ' : ' + ') + Math.abs(v*im).toFixed(2) + 'i'); }
+      out.innerHTML = lines.map(x => '<span>' + x + '</span>').join('');
+    }
+    function loop(now){ if (!playing) return; const dt = Math.min(0.05, (now - last)/1000); last = now; t += dt*0.7; if (t > T0) t = 0; draw(); raf = requestAnimationFrame(loop); }
+    function setPlay(p){ playing = p; st.textContent = p ? '시간이 흐르는 중' : '멈춤'; playLabel(pb, p, '시간 흘리기'); if (p){ last = performance.now(); raf = requestAnimationFrame(loop); } else cancelAnimationFrame(raf); }
+    pb.addEventListener('click', () => setPlay(!playing));
+    bA.addEventListener('click', () => { mode = 'rot'; setPressed([bA, bB], bA); draw(); });
+    bB.addEventListener('click', () => { mode = 'mul'; setPressed([bA, bB], bB); if (!playing) t = Math.max(t, 2.2); draw(); });
+    sM.addEventListener('click', () => { sgn = -1; setPressed([sM, sP], sM); draw(); });
+    sP.addEventListener('click', () => { sgn = 1; setPressed([sM, sP], sP); draw(); });
+    fS.addEventListener('input', draw);
+    reg(draw);
+  })();
+
+  /* ================= 3-2: 점들의 평균 ================= */
+  (function(){
+    const cv = $('cvAvg'); if (!cv) return;
+    const nS = $('nAvg'), fS = $('fAvg'), out = $('readAvg'), vN = $('valNAvg'), vF = $('valFAvg');
+    const sg = SIGS.p3;
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, s = Math.min(w0 - 16, 340);
+      const {g, w} = fit(cv, s + 6);
+      const cx = w/2, cy = s/2 + 3, R = s/2 - 16, f = +fS.value/100, N = +nS.value;
+      polarBase(g, cx, cy, R, true);
+      const P = (t, v) => { const a = TAU*f*t; return [cx + R*v*Math.cos(a), cy + R*v*Math.sin(a)]; };
+      const n = Math.round(Math.min(3000, Math.max(700, T0*f*110))), pts = [];
+      for (let i = 0; i <= n; i++){ const t = i/n*T0; pts.push(P(t, sg(t))); }
+      path(g, pts, COL.f, 1.4, 0.35);
+      let sx = 0, sy = 0;
+      for (let k = 1; k <= N; k++){ const t = (k - 0.5)*T0/N, v = sg(t), a = TAU*f*t; sx += v*Math.cos(a); sy -= v*Math.sin(a); const q = P(t, v); dot(g, q[0], q[1], N > 80 ? 2.2 : 3.4, COL.j); }
+      sx /= N; sy /= N;
+      const c = com(sg, f);
+      dot(g, cx + R*c[0], cy - R*c[1], 7, COL.pi, '#fff');
+      cross(g, cx + R*sx, cy - R*sy, COL.l, 7);
+      text(g, f.toFixed(2) + ' 바퀴/초 · 점 ' + N + '개', 8, 12, COL.fg, {size: 12.5, weight: '700', halo: '#fff'});
+      vN.textContent = N + '개 · 간격 ' + (T0/N).toFixed(3) + '초';
+      vF.textContent = f.toFixed(2) + ' 바퀴/초';
+      const d = Math.hypot(sx - c[0], sy - c[1]);
+      out.innerHTML = '<span>점 ' + N + '개의 평균 = (' + num(sx, 3) + ', ' + num(sy, 3) + ') · 적분으로 구한 무게중심 = (' + num(c[0], 3) + ', ' + num(c[1], 3) + ')</span><span>두 점 사이 거리 ' + d.toFixed(3) + ' · 점 사이 간격 동안 신호는 ' + (3*T0/N).toFixed(2) + '번 진동' + (3*T0/N > 0.5 ? ' (너무 드묾: 봉우리를 건너뛸 수 있음)' : '') + '</span>';
+    }
+    nS.addEventListener('input', draw); fS.addEventListener('input', draw);
+    reg(draw);
+  })();
+
+  /* ================= 3-3: 관찰 구간과 봉우리 ================= */
+  (function(){
+    const cv = $('cvDur'); if (!cv) return;
+    const tS = $('tDur'), val = $('valDur'), out = $('readDur'), bC = $('durC'), bF = $('durF');
+    let mode = 'F';
+    const S = (d, T) => Math.abs(d) < 1e-9 ? T : Math.sin(Math.PI*d*T)/(Math.PI*d);
+    const Re = (f, T) => 0.5*(S(2 - f, T) + S(2 + f, T));   /* −T/2 ~ T/2 구간의 cos(2π·2t) 변환 */
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560;
+      const th = 92, bh = narrow ? 230 : 260;
+      const {g, w} = fit(cv, th + bh + 6);
+      const T = +tS.value/10;
+      /* 위: 신호와 구간 */
+      const F = frame(w, th, -4.2, 4.2, -1.3, 1.3, {l: 30, r: 12, t: 8, b: 22});
+      g.save(); g.fillStyle = 'rgba(22,121,79,.14)'; g.fillRect(F.X(-T/2), F.t, F.X(T/2) - F.X(-T/2), F.b - F.t); g.restore();
+      seg(g, F.l, F.Y(0), F.r, F.Y(0), COL.muted, 1);
+      [-4, -2, 0, 2, 4].forEach(v => text(g, (v < 0 ? '−' : '') + Math.abs(v), F.X(v), F.b + 11, COL.muted, {size: 11, align: 'center'}));
+      text(g, '초', F.r, F.b + 11, COL.muted, {size: 11, align: 'right'});
+      const p = [], p2 = [];
+      for (let i = 0; i <= 900; i++){ const t = -4.2 + i/900*8.4, v = Math.cos(TAU*2*t), q = [F.X(t), F.Y(v)]; (Math.abs(t) <= T/2 ? p : p2).push(q); }
+      path(g, p2.filter(q => q[0] < F.X(-T/2)), COL.line, 1.4); path(g, p2.filter(q => q[0] > F.X(T/2)), COL.line, 1.4);
+      path(g, p, COL.w, 2);
+      text(g, '관찰 구간 ' + T.toFixed(1) + '초', F.X(0), F.t + 2, COL.r, {size: 12, weight: '700', align: 'center', base: 'top', halo: '#fff'});
+      /* 아래: 결과 */
+      g.save(); g.translate(0, th + 4);
+      const yr = mode === 'F' ? [-1.3, 4.4] : [-0.3, 0.65];
+      const G = frame(w, bh, 0, 5, yr[0], yr[1], {l: 40, r: 12, t: 16, b: 34});
+      const yt = mode === 'F' ? [[-1,'−1'],[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4']] : [[-0.25,'−0.25'],[0,'0'],[0.25,'0.25'],[0.5,'0.5']];
+      axes(g, G, [[0,'0'],[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']], yt, '감는 진동수 [바퀴/초]', '');
+      seg(g, G.l, G.Y(0), G.r, G.Y(0), COL.muted, 1.2);
+      text(g, mode === 'F' ? '푸리에 변환의 실수부' : '무게중심의 x좌표', G.l + 6, G.t - 6, COL.pi, {size: 12, weight: '700'});
+      const q = []; for (let i = 0; i <= 1000; i++){ const f = i/200; let v = Re(f, T); if (mode === 'C') v /= T; q.push([G.X(f), G.Y(v)]); }
+      g.save(); g.beginPath(); g.rect(G.l, G.t - 4, G.r - G.l, G.b - G.t + 8); g.clip(); path(g, q, COL.pi, 2.2); g.restore();
+      const pk = mode === 'F' ? Re(2, T) : Re(2, T)/T, z1 = 2 - 1/T, z2 = 2 + 1/T;
+      dot(g, G.X(2), G.Y(pk), 5, COL.pi, '#fff');
+      if (z1 > 0.05){
+        const yb = G.Y(0) + 14;
+        seg(g, G.X(z1), G.Y(0) - 5, G.X(z1), G.Y(0) + 5, COL.r, 2); seg(g, G.X(z2), G.Y(0) - 5, G.X(z2), G.Y(0) + 5, COL.r, 2);
+        seg(g, G.X(z1), yb, G.X(z2), yb, COL.r, 1.6);
+        text(g, '폭 ' + (2/T).toFixed(2) + ' Hz', G.X(z2) + 6, yb, COL.r, {size: 12, weight: '700', halo: '#fff'});
+      }
+      g.restore();
+      val.textContent = T.toFixed(1) + '초';
+      out.innerHTML = '<span>관찰 구간 ' + T.toFixed(1) + '초 · 2에서의 값: 무게중심 ' + (Re(2, T)/T).toFixed(3) + (mode === 'F' ? ' × ' + T.toFixed(1) + '초 = ' + Re(2, T).toFixed(2) : '') + '</span><span>양옆 첫 0: ' + z1.toFixed(2) + '와 ' + z2.toFixed(2) + ' → 폭 2 ÷ ' + T.toFixed(1) + ' = ' + (2/T).toFixed(2) + ' Hz</span>';
+    }
+    bC.addEventListener('click', () => { mode = 'C'; setPressed([bC, bF], bC); draw(); });
+    bF.addEventListener('click', () => { mode = 'F'; setPressed([bC, bF], bF); draw(); });
+    tS.addEventListener('input', draw);
+    reg(draw);
+  })();
+
+  /* ================= 오디오 공통 ================= */
+  let AC = null;
+  function audio(){ if (!AC){ const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AC = new C(); } if (AC.state === 'suspended') AC.resume(); return AC; }
+  const fmtMHz = hz => { const s = (hz/1e6).toFixed(6); return s.slice(0, -3) + ' ' + s.slice(-3); };
+
+  /* ================= 4-1: 수신기 ================= */
+  (function(){
+    const cv = $('cvRx'); if (!cv) return;
+    const dS = $('dRx'), bwS = $('bwRx'), aB = $('audRx'), st = $('stRx'), val = $('valRx'), out = $('readRx'), pill = $('pillRx');
+    const STA = [{n: 'A', f: 7012000, a: 1.0, ph: 0.3}, {n: 'B', f: 7012450, a: 0.45, ph: 2.1}, {n: 'C', f: 7031200, a: 0.7, ph: 4.0}];
+    const F0 = 7000000, F1 = 7040000, VS = 400;
+    let zoom = false, tau = 0, raf = 0, last = 0, vis = false, osc = null;
+    const noise = new Float32Array(1200); { let s = 7; for (let i = 0; i < noise.length; i++){ s = (s*16807) % 2147483647; noise[i] = (s/2147483647); } }
+    const lo = () => F0 + (+dS.value)*10, bw = () => +bwS.value;
+    /* 필터 통과 범위(다이얼 기준, 위쪽이 +): CW는 비트음 600 Hz 둘레, SSB는 위쪽 300 ~ 2700 Hz, AM은 위아래 ±3 kHz */
+    const PB = {500: [350, 850], 2400: [300, 2700], 6000: [-3000, 3000]};
+    const pb = () => PB[bw()] || PB[500];
+    const H = d => { const [a, b] = pb(), c = (a + b)/2, hw = (b - a)/2; return 1/(1 + Math.pow(Math.abs(d - c)/hw, 10)); };
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560;
+      const sh = 150, ps = narrow ? Math.min(w0 - 16, 240) : 220;
+      const {g, w} = fit(cv, sh + 12 + ps + (narrow ? 96 : 0) + 4);
+      const L = lo(), B = bw();
+      /* 밴드 */
+      const x0 = zoom ? L - 3000 : F0, x1 = zoom ? L + 3000 : F1;
+      const F = frame(w, sh, x0, x1, -112, -40, {l: 34, r: 12, t: 22, b: 28});
+      { const [pa, pz] = pb(), qa = Math.max(x0, L + pa), qz = Math.min(x1, L + pz); g.save(); g.fillStyle = 'rgba(194,24,91,.14)'; g.fillRect(F.X(qa), F.t, Math.max(2, F.X(qz) - F.X(qa)), F.b - F.t); g.restore(); }
+      seg(g, F.l, F.b, F.r, F.b, COL.muted, 1.2);
+      const ticks = zoom ? [-3000, -2000, -1000, 0, 1000, 2000, 3000].map(d => [L + d, (d > 0 ? '+' : d < 0 ? '−' : '') + (d === 0 ? '다이얼' : Math.abs(d/1000) + 'k')]) : [[7000000,'7.000'],[7010000,'7.010'],[7020000,'7.020'],[7030000,'7.030'],[7040000,'7.040']];
+      ticks.forEach(([v, s]) => { seg(g, F.X(v), F.b, F.X(v), F.b + 4, COL.muted, 1); text(g, s, F.X(v), F.b + 12, COL.muted, {size: 11, align: 'center'}); });
+      text(g, zoom ? '다이얼 기준 [Hz]' : '주파수 [MHz]', F.r, F.b + 24, COL.muted, {size: 11, align: 'right'});
+      const pts = [], W = F.r - F.l, sig = Math.max(25, (x1 - x0)/W*1.4);
+      for (let i = 0; i <= W; i++){
+        const fq = x0 + i/W*(x1 - x0); let p = Math.pow(10, -10.8 + noise[(Math.floor(fq/37)) % noise.length]*0.5);
+        STA.forEach(s => { const d = (fq - s.f)/sig; p += s.a*s.a*1e-5*Math.exp(-d*d/2); });
+        pts.push([F.l + i, F.Y(Math.max(-112, 10*Math.log10(p)))]);
+      }
+      path(g, pts, COL.fg, 1.3);
+      STA.forEach(s => { if (s.f < x0 || s.f > x1) return; const y = F.Y(10*Math.log10(s.a*s.a*1e-5)) - 8; text(g, s.n, F.X(s.f) + (s.n === 'B' && !zoom ? 7 : 0), y, COL.fg, {size: 12, weight: '700', align: 'center', base: 'bottom', halo: '#fff'}); });
+      seg(g, F.X(L), F.t - 6, F.X(L), F.b, COL.pi, 2);
+      text(g, '다이얼', F.X(L), F.t - 8, COL.pi, {size: 11.5, weight: '700', align: 'center', base: 'bottom', halo: '#fff'});
+      /* 무게중심(I, Q) */
+      const by = sh + 12;
+      const pcx = narrow ? w/2 : 14 + ps/2, pcy = by + ps/2, R = ps/2 - 22;
+      polarBase(g, pcx, pcy, R, false);
+      text(g, 'I', pcx + R + 14, pcy - 8, COL.muted, {size: 12, weight: '700', align: 'right'}); text(g, 'Q', pcx + 8, pcy - R - 12, COL.muted, {size: 12, weight: '700'});
+      const z = tt => { let x = 0, y = 0; STA.forEach(s => { const d = s.f - L, k = s.a*H(d); if (k < 1e-3) return; const a = TAU*d/VS*tt + s.ph; x += k*Math.cos(a); y += k*Math.sin(a); }); return [x, y]; };
+      const tr = []; for (let i = 0; i <= 60; i++){ const q = z(tau - (60 - i)*0.012); tr.push([pcx + R*q[0]/1.2, pcy - R*q[1]/1.2]); }
+      path(g, tr, COL.pi, 1.5, 0.35);
+      const c = z(tau), mx = pcx + R*c[0]/1.2, my = pcy - R*c[1]/1.2;
+      if (Math.hypot(c[0], c[1]) > 0.02) arrow(g, pcx, pcy, mx, my, COL.pi, 2.6);
+      dot(g, mx, my, 5.5, COL.pi, '#fff');
+      text(g, '무게중심 = (I, Q)', narrow ? 8 : 14, by + 10, COL.pi, {size: 12, weight: '700', halo: '#fff'});
+      /* S미터 */
+      let pw = 1e-9; STA.forEach(s => { const k = s.a*H(s.f - L); pw += k*k; });
+      const db = 10*Math.log10(pw), S = Math.max(0.6, 9 + db/6);
+      const mx0 = narrow ? 24 : 14 + ps + 34, my0 = narrow ? by + ps + 34 : by + ps/2 - 10, mw = (narrow ? w - 48 : w - mx0 - 26);
+      text(g, 'S미터', mx0, my0 - 22, COL.fg, {size: 12, weight: '700'});
+      g.save(); g.fillStyle = COL.screen; g.strokeStyle = COL.line; g.fillRect(mx0, my0, mw, 18); g.strokeRect(mx0 + .5, my0 + .5, mw - 1, 17); g.restore();
+      const sx = v => mx0 + Math.min(1, v/14)*mw;
+      g.save(); g.fillStyle = S > 9 ? COL.pi : COL.r; g.fillRect(mx0 + 1, my0 + 1, Math.max(0, sx(S) - mx0 - 2), 16); g.restore();
+      [[1,'1'],[3,'3'],[5,'5'],[7,'7'],[9,'9'],[10.67,'+10'],[12.33,'+20'],[14,'+30']].forEach(([v, s]) => { seg(g, sx(v), my0 + 18, sx(v), my0 + 23, COL.muted, 1); text(g, s, sx(v), my0 + 31, v > 9 ? COL.pi : COL.muted, {size: 10.5, align: 'center'}); });
+      val.textContent = fmtMHz(L) + ' MHz';
+    }
+    function info(){
+      const L = lo(), B = bw(), [pa, pz] = pb(), sgn = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v), lines = ['다이얼 ' + fmtMHz(L) + ' MHz · 필터 폭 ' + (B >= 1000 ? (B/1000) + ' kHz' : B + ' Hz') + ' · 통과: 다이얼 ' + sgn(pa) + ' ~ ' + sgn(pz) + ' Hz'];
+      const inn = STA.filter(s => H(s.f - L) > 0.1);
+      inn.forEach(s => { const d = s.f - L, ad = Math.abs(d);
+        lines.push(s.n + '국 ' + fmtMHz(s.f) + ' MHz → 차이 ' + (d > 0 ? '+' : d < 0 ? '−' : '') + ad + ' Hz → ' + (ad < 30 ? '제로 비트 (무게중심이 거의 멈춤, 소리 없음)' : ad + ' Hz 비트음, ' + (d > 0 ? '시계 반대 방향' : '시계 방향') + ' 회전')); });
+      if (!inn.length){ const nb = STA.slice().sort((a, b) => Math.abs(a.f - L) - Math.abs(b.f - L))[0], d = nb.f - L; lines.push('필터 안에 들어온 국이 없습니다 · 가장 가까운 ' + nb.n + '국은 다이얼 ' + sgn(d) + ' Hz' + (Math.abs(d) < 3000 && d < 0 ? ' (다이얼보다 아래쪽이라 위쪽만 통과시키는 필터가 걸러 냄)' : '')); }
+      out.innerHTML = lines.map(x => '<span>' + x + '</span>').join('');
+      pill.textContent = inn.length ? '필터 안: ' + inn.map(s => s.n + '국').join(', ') : '필터 안: 없음'; pill.style.color = inn.length ? COL.pi : COL.muted;
+      setOsc();
+    }
+    function setOsc(){
+      if (!osc) return; const L = lo();
+      STA.forEach((s, i) => { const d = s.f - L, ad = Math.abs(d), k = (ad < 30 || ad > 3500) ? 0 : s.a*H(d)*0.16; osc[i].o.frequency.setTargetAtTime(Math.max(30, Math.min(3500, ad)), AC.currentTime, 0.02); osc[i].g.gain.setTargetAtTime(k, AC.currentTime, 0.03); });
+    }
+    function sound(on){
+      if (on){ const ac = audio(); if (!ac){ st.textContent = '이 브라우저는 소리를 낼 수 없음'; return; }
+        osc = STA.map(() => { const o = ac.createOscillator(), gg = ac.createGain(); o.type = 'sine'; gg.gain.value = 0; o.connect(gg).connect(ac.destination); o.start(); return {o, g: gg}; });
+        setOsc(); st.textContent = '켜짐'; playLabel(aB, true, '소리 듣기', '소리 끄기');
+      } else { if (osc){ osc.forEach(x => { try { x.g.gain.setTargetAtTime(0, AC.currentTime, 0.02); x.o.stop(AC.currentTime + 0.1); } catch(e){} }); } osc = null; st.textContent = '꺼짐'; playLabel(aB, false, '소리 듣기'); }
+    }
+    aB.addEventListener('click', () => sound(!osc));
+    window.addEventListener('pagehide', () => sound(false));
+    function loop(now){ const dt = Math.min(0.05, (now - last)/1000); last = now; tau += dt; draw(); if (vis) raf = requestAnimationFrame(loop); }
+    onVis(cv, v => { vis = v; cancelAnimationFrame(raf); if (v && !reduce){ last = performance.now(); raf = requestAnimationFrame(loop); } else if (!v) sound(false); });
+    dS.addEventListener('input', () => { draw(); info(); }); bwS.addEventListener('change', () => { draw(); info(); });
+    cv.closest('.stage').querySelectorAll('[data-tune]').forEach(b => b.addEventListener('click', () => { if (b.dataset.bw) bwS.value = b.dataset.bw; dS.value = b.dataset.tune; draw(); info(); }));
+    const zb = cv.closest('.stage').querySelector('.zoom');
+    if (zb){ const [a, b] = zb.querySelectorAll('button'); a.addEventListener('click', () => { zoom = false; setPressed([a, b], a); draw(); }); b.addEventListener('click', () => { zoom = true; setPressed([a, b], b); draw(); }); }
+    reg(() => { draw(); info(); });
+  })();
+
+  /* ================= 4-2: 워터폴 ================= */
+  (function(){
+    const cv = $('cvWf'); if (!cv) return;
+    const pb = $('pWf'), st = $('stWf'), out = $('readWf');
+    const FS = 6000, N = 1024, BINS = 512, ROWS = 230, ROWT = N/FS;
+    const FT8 = [{f0: 520, cyc: 0, a: 0.5, ph: 0, seed: 11}, {f0: 1185, cyc: 0, a: 0.25, ph: 0, seed: 23}, {f0: 1610, cyc: 1, a: 0.6, ph: 0, seed: 37}, {f0: 2245, cyc: 1, a: 0.3, ph: 0, seed: 51}, {f0: 1890, cyc: 0, a: 0.15, ph: 0, seed: 67}];
+    const MORSE = {C: '-.-.', Q: '--.-', D: '-..', E: '.', H: '....', L: '.-..', K: '-.-'};
+    const cwPat = []; ('CQ CQ DE HL K').split('').forEach(ch => { if (ch === ' '){ cwPat.push([0, 4]); return; } MORSE[ch].split('').forEach(m => { cwPat.push([1, m === '.' ? 1 : 3]); cwPat.push([0, 1]); }); cwPat.push([0, 2]); }); cwPat.push([0, 10]);
+    const cwUnit = 1.2/18, cwLen = cwPat.reduce((s, p) => s + p[1], 0)*cwUnit;
+    function cwEnv(t){ let x = (t % cwLen + cwLen) % cwLen, acc = 0; for (const [on, u] of cwPat){ const d = u*cwUnit; if (x < acc + d){ if (!on) return 0; const r = Math.min(x - acc, acc + d - x); return Math.min(1, r/0.005); } acc += d; } return 0; }
+    const hash = (a, b) => { let h = (a*73856093) ^ (b*19349663); h = (h ^ (h >>> 13))*1274126177; return (h >>> 0) % 8; };
+    let simT = 0, cwPh = 0, seed = 12345; const rnd = () => { seed = (seed*16807) % 2147483647; return seed/2147483647; };
+    const gauss = () => { const u = Math.max(1e-9, rnd()), v = rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); };
+    const win = new Float64Array(N); for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5*Math.cos(TAU*i/(N - 1));
+    const img = document.createElement('canvas'); img.width = BINS; img.height = ROWS; const ig = img.getContext('2d');
+    ig.fillStyle = '#05070d'; ig.fillRect(0, 0, BINS, ROWS);
+    const rowImg = ig.createImageData(BINS, 1);
+    let lastSpec = new Float64Array(BINS);
+    function color(v){ v = Math.max(0, Math.min(1, v)); const stops = [[0,[5,7,13]],[0.35,[16,40,120]],[0.6,[0,150,190]],[0.8,[240,220,60]],[1,[255,80,40]]]; for (let i = 1; i < stops.length; i++){ if (v <= stops[i][0]){ const [a, ca] = stops[i-1], [b, cb] = stops[i], u = (v - a)/(b - a); return ca.map((x, k) => x + (cb[k] - x)*u); } } return stops[stops.length-1][1]; }
+    function row(){
+      const re = new Float64Array(N), im = new Float64Array(N);
+      for (let i = 0; i < N; i++){
+        const t = simT + i/FS; let v = 0.06*gauss();
+        const cyc = Math.floor(t/15), inC = t - cyc*15;
+        FT8.forEach(s => { if (cyc % 2 === s.cyc && inC > 0.5 && inC < 13.14){ const sym = Math.floor((inC - 0.5)/0.16); const fr = s.f0 + hash(s.seed + cyc, sym)*6.25; s.ph += TAU*fr/FS; v += s.a*0.1*Math.sin(s.ph); } });
+        cwPh += TAU*800/FS; v += 0.16*cwEnv(t)*Math.sin(cwPh);
+        re[i] = v*win[i];
+      }
+      simT += ROWT;
+      fft(re, im, false);
+      for (let k = 0; k < BINS; k++){ const p = (re[k]*re[k] + im[k]*im[k]); const db = 10*Math.log10(p + 1e-12); lastSpec[k] = db; const c = color((db + 12)/34); const o = k*4; rowImg.data[o] = c[0]; rowImg.data[o+1] = c[1]; rowImg.data[o+2] = c[2]; rowImg.data[o+3] = 255; }
+      ig.drawImage(img, 0, 0, BINS, ROWS - 1, 0, 1, BINS, ROWS - 1);
+      ig.putImageData(rowImg, 0, 0);
+    }
+    for (let i = 0; i < ROWS; i++) row();
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, sh = 96;
+      const {g, w} = fit(cv, sh + ROWS + 34);
+      const l = 34, r = w - 10, W = r - l;
+      const F = frame(w, sh, 0, 3000, -14, 26, {l, r: 10, t: 10, b: 6});
+      g.save(); g.fillStyle = '#0b1220'; g.fillRect(l, F.t, W, F.b - F.t); g.restore();
+      const pts = []; for (let k = 0; k < BINS; k++) pts.push([F.X(k*FS/N), F.Y(Math.max(-14, Math.min(26, lastSpec[k])))]);
+      path(g, pts, '#7fe3ff', 1.2);
+      text(g, '밴드스코프 (지금 한 줄)', l + 6, F.t + 9, '#cfe9ff', {size: 11, weight: '600'});
+      g.imageSmoothingEnabled = false;
+      g.drawImage(img, 0, 0, BINS, ROWS, l, sh, W, ROWS);
+      text(g, '↓ 시간', l + 6, sh + 12, '#cfe9ff', {size: 11, weight: '600'});
+      [0, 500, 1000, 1500, 2000, 2500, 3000].forEach(v => { const x = l + v/3000*W; seg(g, x, sh + ROWS, x, sh + ROWS + 4, COL.muted, 1); text(g, String(v), x, sh + ROWS + 13, COL.muted, {size: 10.5, align: v === 0 ? 'left' : v === 3000 ? 'right' : 'center'}); });
+      text(g, '오디오 진동수 [Hz] (14.074 MHz + 이 값)', r, sh + ROWS + 27, COL.muted, {size: 11, align: 'right'});
+      const cyc = Math.floor(simT/15), sec = simT - cyc*15;
+      out.innerHTML = '<span>1초에 6000번 잼 · FFT 1024점 → 칸 간격 6000 ÷ 1024 = 5.86 Hz · 한 줄 = 1024 ÷ 6000 = 0.17초</span><span>FT8 주기 ' + (cyc % 2 ? '홀수' : '짝수') + ' · ' + sec.toFixed(1) + '초째 (0.5 ~ 13.1초에 송신)</span>';
+    }
+    let playing = false, raf = 0, acc = 0, last = 0, vis = true;
+    function loop(now){ if (!playing || !vis) return; acc += Math.min(0.2, (now - last)/1000); last = now; let n = 0; while (acc >= ROWT && n < 4){ row(); acc -= ROWT; n++; } if (n) draw(); raf = requestAnimationFrame(loop); }
+    function setPlay(p){ playing = p; st.textContent = p ? '흐르는 중' : '멈춤'; playLabel(pb, p, '흘려보내기'); cancelAnimationFrame(raf); if (p){ last = performance.now(); raf = requestAnimationFrame(loop); } }
+    pb.addEventListener('click', () => setPlay(!playing));
+    onVis(cv, v => { vis = v; if (v && playing){ last = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(loop); } });
+    reg(draw);
+  })();
+
+  /* ================= 4-3: 키잉과 대역폭 ================= */
+  (function(){
+    const cv = $('cvBw'); if (!cv) return;
+    const wS = $('wpmBw'), val = $('valBw'), out = $('readBw'), bH = $('bwHard'), bS = $('bwSoft');
+    let soft = false;
+    const env = (t, tau, rise) => { if (t < 0 || t > tau) return 0; if (!rise) return 1; const r = Math.min(t, tau - t); return r >= rise ? 1 : 0.5 - 0.5*Math.cos(Math.PI*r/rise); };
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560, th = 100, bh = narrow ? 220 : 250;
+      const {g, w} = fit(cv, th + bh + 8);
+      const wpm = +wS.value, tau = 1.2/wpm, rise = soft ? 0.005 : 0;
+      /* 위: 점 세 개 */
+      const span = 6*tau + 0.04;
+      const F = frame(w, th, -0.02, span - 0.02, -0.15, 1.25, {l: 30, r: 12, t: 10, b: 22});
+      seg(g, F.l, F.Y(0), F.r, F.Y(0), COL.muted, 1);
+      const p = []; for (let i = 0; i <= 900; i++){ const t = -0.02 + i/900*span; let v = 0; for (let k = 0; k < 3; k++) v = Math.max(v, env(t - k*2*tau, tau, rise)); p.push([F.X(t), F.Y(v)]); }
+      path(g, p, COL.w, 2.2);
+      seg(g, F.X(0), F.Y(1.12), F.X(tau), F.Y(1.12), COL.l, 1.6);
+      text(g, '점 하나 ' + (tau*1000).toFixed(0) + ' ms', F.X(tau) + 6, F.Y(1.12), COL.l, {size: 12, weight: '700', halo: '#fff'});
+      text(g, '시간', F.r, F.b + 11, COL.muted, {size: 11, align: 'right'});
+      /* 아래: 진동수 분포 */
+      g.save(); g.translate(0, th + 6);
+      const G = frame(w, bh, -500, 500, -80, 3, {l: 42, r: 12, t: 12, b: 32});
+      axes(g, G, [[-500,'−500'],[-250,'−250'],[0,'0'],[250,'+250'],[500,'+500']], [[0,'0'],[-20,'−20'],[-40,'−40'],[-60,'−60'],[-80,'−80']], '반송파에서 떨어진 정도 [Hz]', 'dB');
+      const M = 401, ns = 1600, dt = tau/ns, re0 = [], spec = new Float64Array(M);
+      for (let k = 0; k < ns; k++) re0.push(env((k + 0.5)*dt, tau, rise));
+      let pk = 0;
+      for (let j = 0; j < M; j++){ const f = -500 + j*2.5; let x = 0, y = 0; for (let k = 0; k < ns; k++){ const t = (k + 0.5)*dt, a = TAU*f*t; x += re0[k]*Math.cos(a); y -= re0[k]*Math.sin(a); } spec[j] = Math.hypot(x, y)*dt; pk = Math.max(pk, spec[j]); }
+      const q = []; let w40 = 0;
+      for (let j = 0; j < M; j++){ const db = 20*Math.log10(spec[j]/pk + 1e-9); const f = -500 + j*2.5; if (db > -40) w40 = Math.max(w40, Math.abs(f)); q.push([G.X(f), G.Y(Math.max(-80, db))]); }
+      g.save(); g.beginPath(); g.rect(G.l, G.t - 2, G.r - G.l, G.b - G.t + 4); g.clip(); path(g, q, COL.pi, 1.8); g.restore();
+      seg(g, G.l, G.Y(-40), G.r, G.Y(-40), COL.j, 1, [5, 4]);
+      const z = 1/tau; seg(g, G.X(-z), G.Y(0) - 2, G.X(z), G.Y(0) - 2, COL.r, 2);
+      text(g, '가운데 폭 ' + (2*z).toFixed(0) + ' Hz', G.X(z) + 8, G.Y(-6), COL.r, {size: 12, weight: '700', halo: '#fff'});
+      g.restore();
+      val.textContent = wpm + ' WPM';
+      out.innerHTML = '<span>' + wpm + ' WPM → 점 길이 1200 ÷ ' + wpm + ' = ' + (tau*1000).toFixed(0) + ' ms · 가운데 봉우리 폭(첫 0 사이) ≈ ' + (2/tau).toFixed(0) + ' Hz</span><span>−40 dB보다 센 범위: ' + (w40 >= 480 ? '±500 Hz 바깥까지 (키 클릭)' : '약 ±' + w40.toFixed(0) + ' Hz') + ' · 가장자리 ' + (soft ? '5 ms에 걸쳐 부드럽게' : '순간적으로') + '</span>';
+    }
+    bH.addEventListener('click', () => { soft = false; setPressed([bH, bS], bH); draw(); });
+    bS.addEventListener('click', () => { soft = true; setPressed([bH, bS], bS); draw(); });
+    wS.addEventListener('input', draw);
+    reg(draw);
+  })();
+
+  /* ================= 4-4: 측파대 ================= */
+  (function(){
+    const cv = $('cvAm'); if (!cv) return;
+    const fS = $('fmAm'), val = $('valAm'), out = $('readAm'), bs = [...$('modeAm').querySelectorAll('[data-mode]')];
+    let mode = 'am'; const m = 0.8;
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560, th = 130, bh = narrow ? 190 : 210;
+      const {g, w} = fit(cv, th + bh + 8);
+      const fm = +fS.value/10;   /* kHz */
+      /* 위: 시간 (음 3주기, 반송파는 음의 14배로 그림) */
+      const F = frame(w, th, 0, 3, -1.9, 1.9, {l: 12, r: 12, t: 8, b: 10});
+      seg(g, F.l, F.Y(0), F.r, F.Y(0), COL.muted, 1);
+      const sig = u => { const a = TAU*u, c = TAU*14*u; if (mode === 'am') return (1 + m*Math.cos(a))*Math.cos(c); if (mode === 'dsb') return 1.6*m*Math.cos(a)*Math.cos(c); return 1.3*Math.cos(c + a); };
+      const envf = u => mode === 'am' ? 1 + m*Math.cos(TAU*u) : mode === 'dsb' ? Math.abs(1.6*m*Math.cos(TAU*u)) : 1.3;
+      const p = [], e1 = [], e2 = []; for (let i = 0; i <= 1400; i++){ const u = i/1400*3; p.push([F.X(u), F.Y(sig(u))]); e1.push([F.X(u), F.Y(envf(u))]); e2.push([F.X(u), F.Y(-envf(u))]); }
+      path(g, p, COL.fg, 1.3); path(g, e1, COL.l, 1.6, 0.8); path(g, e2, COL.l, 1.6, 0.8);
+      text(g, mode === 'usb' ? '세기 일정 · 크기를 키워 그림' : mode === 'dsb' ? '포락선 = 음의 모양 · 크기를 키워 그림' : '포락선 = 음의 모양', F.r - 2, F.t + 6, COL.l, {size: 11.5, weight: '600', align: 'right', halo: '#fff'});
+      /* 아래: 스펙트럼 */
+      g.save(); g.translate(0, th + 6);
+      const G = frame(w, bh, -4, 4, 0, 1.15, {l: 30, r: 12, t: 22, b: 34});
+      axes(g, G, [[-4,'−4'],[-2,'−2'],[0,'0'],[2,'+2'],[4,'+4']], [], '반송파 기준 [kHz]', '');
+      const lines = mode === 'am' ? [[0, 1, COL.fg, '반송파'], [fm, m/2, COL.pi, 'USB'], [-fm, m/2, COL.c, 'LSB']] : mode === 'dsb' ? [[fm, m/2, COL.pi, 'USB'], [-fm, m/2, COL.c, 'LSB']] : [[fm, m/2, COL.pi, 'USB']];
+      lines.forEach(([x, h, c, s]) => { seg(g, G.X(x), G.Y(0), G.X(x), G.Y(h), c, 4); text(g, s, G.X(x), G.Y(h) - 6, c, {size: 12, weight: '700', align: 'center', base: 'bottom', halo: '#fff'}); });
+      if (mode !== 'am') { seg(g, G.X(0), G.Y(0), G.X(0), G.Y(0.12), COL.muted, 1.4, [3, 3]); text(g, '반송파 없음', G.X(0), G.Y(0.14), COL.muted, {size: 11, align: 'center', base: 'bottom'}); }
+      g.restore();
+      val.textContent = fm.toFixed(1) + ' kHz';
+      const bw = mode === 'usb' ? fm : 2*fm;
+      const pw = mode === 'am' ? '전력: 반송파 ' + (100/(1 + m*m/2)).toFixed(0) + '%, 두 측파대 ' + (100*(m*m/2)/(1 + m*m/2)).toFixed(0) + '% (m = 0.8)' : mode === 'dsb' ? '전력: 전부 두 측파대 (같은 정보가 둘)' : '전력: 전부 한 측파대';
+      out.innerHTML = '<span>음 ' + fm.toFixed(1) + ' kHz · 봉우리 ' + (mode === 'am' ? 'f<sub>c</sub>, f<sub>c</sub> ± ' + fm.toFixed(1) : mode === 'dsb' ? 'f<sub>c</sub> ± ' + fm.toFixed(1) : 'f<sub>c</sub> + ' + fm.toFixed(1)) + ' kHz · 점유 폭 ' + bw.toFixed(1) + ' kHz</span><span>' + pw + '</span>';
+    }
+    bs.forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; setPressed(bs, b); draw(); }));
+    fS.addEventListener('input', draw);
+    reg(draw);
+  })();
+
+  /* ================= 4-5: 노치 필터 ================= */
+  (function(){
+    const cv = $('cvNf'); if (!cv) return;
+    const onB = $('nfOn'), pB = $('nfPlay'), st = $('stNf'), out = $('readNf');
+    const FS = 8000, LEN = 8000, N = 8192, FW = 1755, NW = 30;
+    const x0 = new Float64Array(LEN);
+    (function(){
+      const F = [[800, 90, 1], [1200, 100, 0.7], [2500, 140, 0.25]];
+      const ph = new Float64Array(30); let f0ph = 0;
+      for (let i = 0; i < LEN; i++){
+        const t = i/FS, f0 = 130 + 3*Math.sin(TAU*5*t), envS = Math.min(1, t/0.05, (1 - t)/0.05);
+        let v = 0;
+        for (let k = 1; k <= 24; k++){ const fk = k*f0; let a = 0; F.forEach(([c, b, gg]) => a += gg/(1 + Math.pow((k*130 - c)/b, 2))); a *= 1/Math.sqrt(k); ph[k] += TAU*fk/FS; v += a*Math.sin(ph[k]); }
+        x0[i] = (0.22*v + 0.35*Math.sin(TAU*FW*t))*Math.max(0, envS);
+      }
+    })();
+    function spectrum(x){ const re = new Float64Array(N), im = new Float64Array(N); re.set(x); fft(re, im, false); return [re, im]; }
+    const [R0, I0] = spectrum(x0), x1 = new Float64Array(LEN);
+    (function(){ const re = R0.slice(), im = I0.slice(); for (let k = 0; k < N; k++){ const f = (k <= N/2 ? k : N - k)*FS/N; if (Math.abs(f - FW) < NW){ re[k] = 0; im[k] = 0; } } fft(re, im, true); for (let i = 0; i < LEN; i++) x1[i] = re[i]; })();
+    const [R1, I1] = spectrum(x1);
+    const mag = (re, im) => { const a = new Float64Array(N/2); for (let k = 0; k < N/2; k++) a[k] = 10*Math.log10(re[k]*re[k] + im[k]*im[k] + 1e-12); return a; };
+    const S0 = mag(R0, I0), S1 = mag(R1, I1);
+    let mx = -1e9; for (let k = 0; k < N/2; k++) mx = Math.max(mx, S0[k]);
+    const band = s => { let m = -1e9; for (let k = 0; k < N/2; k++){ const f = k*FS/N; if (Math.abs(f - FW) < NW) m = Math.max(m, s[k]); } return m; };
+    const cut = band(S0) - band(S1);
+    let on = false;
+    function draw(){
+      const w0 = cv.parentElement.clientWidth || 320, narrow = w0 < 560, th = 120, bh = narrow ? 200 : 230;
+      const {g, w} = fit(cv, th + bh + 8);
+      const F = frame(w, th, 0.40, 0.50, -1, 1, {l: 12, r: 12, t: 8, b: 16});
+      seg(g, F.l, F.Y(0), F.r, F.Y(0), COL.muted, 1);
+      let pk = 0; for (let i = 3200; i < 4000; i++) pk = Math.max(pk, Math.abs(x0[i]));
+      const p0 = [], p1 = []; for (let i = 3200; i < 4000; i++){ const t = i/FS; p0.push([F.X(t), F.Y(x0[i]/pk*0.95)]); p1.push([F.X(t), F.Y(x1[i]/pk*0.95)]); }
+      if (on){ path(g, p0, COL.line, 1.2); path(g, p1, COL.w, 1.8); } else path(g, p0, COL.fg, 1.4);
+      text(g, on ? '필터 후 (회색: 필터 전)' : '필터 전', F.r, F.t + 6, on ? COL.w : COL.fg, {size: 11.5, weight: '600', align: 'right', halo: '#fff'});
+      g.save(); g.translate(0, th + 6);
+      const G = frame(w, bh, 0, 3200, -70, 3, {l: 40, r: 12, t: 12, b: 32});
+      axes(g, G, [[0,'0'],[800,'800'],[1600,'1600'],[2400,'2400'],[3200,'3200']], [[0,'0'],[-20,'−20'],[-40,'−40'],[-60,'−60']], '진동수 [Hz]', 'dB');
+      if (on){ g.save(); g.fillStyle = 'rgba(194,24,91,.16)'; g.fillRect(G.X(FW - NW), G.t, G.X(FW + NW) - G.X(FW - NW), G.b - G.t); g.restore(); }
+      const S = on ? S1 : S0, q = []; for (let k = 0; k < N/2; k++){ const f = k*FS/N; if (f > 3200) break; q.push([G.X(f), G.Y(Math.max(-70, S[k] - mx))]); }
+      g.save(); g.beginPath(); g.rect(G.l, G.t - 2, G.r - G.l, G.b - G.t + 4); g.clip(); path(g, q, on ? COL.w : COL.fg, 1.2); g.restore();
+      if (!on) text(g, '방해음 1755 Hz', G.X(FW) + 8, G.Y(-4), COL.pi, {size: 12, weight: '700', halo: '#fff'});
+      text(g, '음성의 배음(130 Hz 간격)', G.X(260), G.Y(-8), COL.l, {size: 11.5, weight: '600', halo: '#fff'});
+      g.restore();
+      out.innerHTML = '<span>FFT 8192점(1초 분량) → 칸 간격 0.98 Hz · 노치 폭 ' + (FW - NW) + ' ~ ' + (FW + NW) + ' Hz (칸 ' + Math.round(2*NW/(FS/N)) + '개)</span><span>' + (on ? '방해음 칸을 0으로 → 역 FFT → 방해음 약 ' + cut.toFixed(0) + ' dB 줄어듦' : '방해음이 음성의 배음보다 높게 솟아 있음') + '</span>';
+    }
+    onB.addEventListener('click', () => { on = !on; onB.setAttribute('aria-pressed', on ? 'true' : 'false'); onB.textContent = on ? '노치 필터 끄기' : '노치 필터 켜기'; st.textContent = on ? '켜짐' : '꺼짐'; draw(); });
+    let src = null;
+    pB.addEventListener('click', () => {
+      const ac = audio(); if (!ac) return;
+      if (src){ try { src.stop(); } catch(e){} src = null; playLabel(pB, false, '소리 듣기'); return; }
+      const x = on ? x1 : x0, b = ac.createBuffer(1, LEN, FS), d = b.getChannelData(0); let m = 0; for (let i = 0; i < LEN; i++) m = Math.max(m, Math.abs(x0[i]));
+      for (let i = 0; i < LEN; i++) d[i] = x[i]/m*0.6;
+      src = ac.createBufferSource(); src.buffer = b; src.connect(ac.destination); src.start();
+      playLabel(pB, true, '소리 듣기', '멈추기'); src.onended = () => { src = null; playLabel(pB, false, '소리 듣기'); };
+    });
+    reg(draw);
+  })();
+})();
+</script>
+<script>
+/* 듣기 대본. s = 항목(id), at = 강조할 곳(항목 안 선택자), i = 같은 선택자 중 몇 번째, t = 읽을 말, a = 그 순간 할 조작
+   조작: ['range', 입력 id, 값, 시간ms] 슬라이더 옮기기 · ['click', 선택자] 누르기 · ['ensure', 선택자, true|false] 켜짐/꺼짐 맞추기
+         ['select', id, 값] 고르기 · ['open'] 풀이 펼치기 · ['wait', ms] 기다리기 · ['at', 문장 번호, [조작…]] 그 문장을 읽기 시작할 때 */
+window.NARR = [
+  {"s": "hero", "at": "h1", "t": "푸리에 변환을 그림으로 이해해 보겠습니다. 여러 소리와 전파가 섞인 신호 속에 어떤 진동수가 얼마나 들어 있는지 알아내는 방법입니다. 공식을 먼저 보여 드리지 않고, 그래프를 원에 감는 실험에서 시작해 공식에 이르고, 마지막에는 무전기 안에서 같은 일이 어떻게 일어나는지 확인합니다."},
+  {"s": "hero", "at": ".cast", "t": "전체는 네 부분입니다. 섞인 신호라는 문제, 원에 감는 기계, 그 기계를 식으로 쓰기, 그리고 무선에서의 쓰임입니다. 항목마다 제목 아래에 이 항목 듣기 버튼이 있으니, 필요한 곳만 골라 들어도 됩니다."},
+
+  {"s": "i1", "at": ".ask", "t": "먼저 신호가 무엇인지 정리하겠습니다. 마이크는 매 순간 공기의 압력을 재고, 안테나는 매 순간 전압을 만들어 냅니다. 어느 쪽이든 결과는 시간에 따라 오르내리는 그래프 하나입니다. 이 페이지에서는 이 그래프를 지 오브 티, 시간에 대한 세기라고 부릅니다."},
+  {"s": "i1", "at": ".terms", "t": "가장 단순한 신호는 한 가지 빠르기로만 오르내리는 진동입니다. 1초에 몇 번 오르내리는지를 진동수라 하고, 단위는 헤르츠입니다. 40미터 밴드의 7메가헤르츠 전파는 1초에 700만 번을 오르내립니다. 한 번 오르내리는 데 걸리는 시간은 주기라 하고, 진동수의 역수입니다."},
+  {"s": "i1", "at": ".stage", "t": "그림에서는 눈으로 세기 쉽도록 1초에 2번, 3번처럼 아주 느린 진동을 씁니다. 지금은 2헤르츠와 3헤르츠 두 진동이 더해져 맨 위의 굵은 선을 만들고 있습니다. 같은 순간의 높이를 그대로 더한 것입니다. 0초에는 둘 다 꼭대기라 크게 솟고, 0.5초 무렵에는 하나는 위, 하나는 아래라 서로 지워집니다.", "a": [["ensure", "#mixBtns [data-hz=\"2\"]", true], ["ensure", "#mixBtns [data-hz=\"3\"]", true], ["ensure", "#mixBtns [data-hz=\"4\"]", false], ["ensure", "#mixBtns [data-hz=\"5\"]", false]]},
+  {"s": "i1", "at": ".stage", "t": "4헤르츠와 5헤르츠를 더 넣어 보겠습니다. 합은 점점 복잡해져서, 맨 위의 선만 보고는 어떤 진동이 몇 개 들어 있는지 알아보기 어렵습니다.", "a": [["ensure", "#mixBtns [data-hz=\"4\"]", true], ["wait", 900], ["ensure", "#mixBtns [data-hz=\"5\"]", true]]},
+
+  {"s": "i2", "at": ".ask", "t": "문제는 바로 여기에 있습니다. 녹음 파일이나 안테나에서 얻는 것은 이 합뿐입니다. 어떤 진동들을 더했는지는 어디에도 적혀 있지 않습니다. 물감을 섞기는 쉬워도, 섞인 물감에서 원래 색을 다시 뽑아내기는 어려운 것과 같습니다."},
+  {"s": "i2", "at": ".prose", "t": "무선에서는 이 일이 매일 일어납니다. 안테나에는 밴드 안 모든 국의 신호가 잡음과 함께 하나의 전압으로 더해져 들어옵니다. 그런데도 수신기는 그중 한 국만 골라 들려주고, 밴드스코프는 어느 주파수에 신호가 있는지를 한 화면에 그려 냅니다. 이제부터 만들 것은, 합만 주어졌을 때 그 안의 진동수를 찾아내는 기계입니다."},
+
+  {"s": "i3", "at": ".ask", "t": "실험에 쓸 신호는 1초에 3번 진동하는 그래프입니다. 0과 1 사이를 오르내리도록 위로 올려 두었는데, 그 이유는 조금 뒤에 밝혀집니다."},
+  {"s": "i3", "at": ".parts", "t": "이 그래프를 원 둘레에 감아 보겠습니다. 시각마다 원점에서 화살표를 긋되, 화살표의 길이는 그 순간 그래프의 높이로 합니다. 그리고 시간이 흐르는 동안 화살표를 일정한 빠르기로 시계 방향으로 돌립니다. 화살표 끝이 지나간 자취가 감긴 그래프입니다. 그래프가 높을 때는 원점에서 멀리, 낮을 때는 원점 가까이에 찍힙니다."},
+  {"s": "i3", "at": ".stage", "t": "실제로 감는 모습을 보겠습니다. 지금 화살표는 1초에 반 바퀴씩 돕니다. 위쪽 그래프의 점선은 화살표가 한 바퀴를 마치는 시각으로, 2초마다 하나씩 있습니다. 한 바퀴 도는 2초 동안 신호는 여섯 번 오르내리므로, 원 둘레에 꽃잎이 여섯 장 생깁니다.", "a": [["range", "fW1", 50, 600], ["wait", 700], ["ensure", "#penW1", true]]},
+  {"s": "i3", "at": ".stage", "t": "여기서 진동수가 두 가지라는 점을 짚어 두겠습니다. 하나는 신호의 진동수로, 1초에 3번으로 정해져 있습니다. 다른 하나는 화살표가 1초에 몇 바퀴 도는지를 나타내는 감는 진동수입니다. 이 값은 우리가 손잡이처럼 마음대로 돌릴 수 있습니다."},
+  {"s": "i3", "at": ".stage", "t": "감는 진동수를 조금씩 올려 보겠습니다. 0.79, 그리고 1.55. 값마다 모양은 달라지지만, 꽃잎이 원 둘레 여러 방향으로 흩어져 있다는 점은 같습니다.", "a": [["ensure", "#penW1", false], ["range", "fW1", 79, 1500], ["wait", 1800], ["range", "fW1", 155, 1500]]},
+  {"s": "i3", "at": ".stage", "t": "이번엔 3에 아주 가까운 2.94입니다. 꽃잎들이 바퀴마다 조금씩 밀리며 원을 돌아가는 모양입니다.", "a": [["range", "fW1", 294, 1800]]},
+  {"s": "i3", "at": ".stage", "t": "그리고 정확히 3입니다. 모양이 갑자기 달라집니다. 봉우리는 모두 오른쪽에, 골은 모두 왼쪽에 몰려 한쪽으로 쏠린 모양이 됩니다. 신호가 한 번 오르내릴 때 화살표가 정확히 한 바퀴를 돌기 때문에, 봉우리가 매번 같은 방향에 찍힌 것입니다.", "a": [["range", "fW1", 300, 1200]]},
+  {"s": "i3", "at": ".ex", "t": "예제의 핵심은 이렇습니다. 한 바퀴 동안 생기는 꽃잎의 수는 신호의 진동수를 감는 진동수로 나눈 값입니다. 0.5바퀴라면 3 나누기 0.5로 여섯 장입니다. 이 값이 정확히 1이 되는 순간이 바로 쏠림이 일어나는 순간입니다.", "a": [["open"]]},
+
+  {"s": "i4", "at": ".ask", "t": "쏠렸는지 아닌지를 눈대중이 아니라 숫자로 나타내 보겠습니다. 화살표 끝이 지나가는 동안 같은 시간 간격마다 같은 무게의 구슬을 하나씩 내려놓는다고 생각해 보겠습니다. 이 구슬들의 무게중심, 곧 시각에 따라 찍힌 점들의 평균 위치를 봅니다. 꽃잎이 여러 방향으로 흩어지면 서로 상쇄되어 무게중심은 원점 근처에, 한쪽으로 쏠리면 그쪽으로 끌려갑니다. 곡선 모양 철사의 무게중심과는 조금 다른데, 철사는 길이마다 무게가 실리지만 여기서는 시간마다 같은 무게를 둡니다."},
+  {"s": "i4", "at": ".stage", "t": "그림에 세 번째 그래프가 생겼습니다. 가로축은 감는 진동수, 세로축은 무게중심이 오른쪽으로 얼마나 가 있는지, 곧 무게중심의 x좌표입니다. 감는 진동수를 0부터 5까지 천천히 올리며 이 값을 그려 보겠습니다. 대부분의 구간에서 무게중심은 원점 근처에서 작게 흔들리고, 세 번째 그래프도 0 근처에 머뭅니다. 그러다 감는 진동수가 3을 지나는 순간, 무게중심이 오른쪽으로 끌려가며 그래프가 솟아오릅니다.", "a": [["click", "#upW2"], ["ensure", "#swW2", false], ["range", "fW2", 0, 300], ["wait", 400], ["ensure", "#swW2", true]]},
+  {"s": "i4", "at": ".stage", "t": "감는 진동수를 3에 다시 맞춰 보면 무게중심의 x좌표는 0.25입니다. 신호가 흔들리는 폭 0.5의 절반입니다.", "a": [["ensure", "#swW2", false], ["range", "fW2", 300, 1500]]},
+  {"s": "i4", "at": ".prose", "i": 1, "t": "그런데 감는 진동수가 0인 곳에도 0.5 높이의 봉우리가 있습니다. 화살표가 돌지 않으면 모든 점이 오른쪽 가로축 위에 찍히니, 무게중심은 신호의 평균값이 됩니다. 신호를 위로 올려 두었기 때문에 평균이 0.5인 것입니다.", "a": [["range", "fW2", 0, 1200]]},
+  {"s": "i4", "at": ".stage", "t": "이번엔 신호에서 평균값을 빼 평균을 0으로 만들고 다시 훑어 보겠습니다. 0의 봉우리는 사라지고 3의 봉우리만 남습니다. 전기에서는 이 평균값을 직류 성분이라고 부릅니다. 0에 생기는 봉우리는 진동이 아니라, 직류가 얼마나 섞였는지를 알려 줍니다.", "a": [["click", "#ctrW2"], ["wait", 500], ["ensure", "#swW2", true]]},
+  {"s": "i4", "at": ".prose", "i": 1, "t": "정리하면, 이 세 번째 그래프는 신호 안에 있는 진동수에서만 봉우리를 세웁니다. 우리가 찾던 기계의 출력입니다. 아직 손볼 곳이 하나 남아 있어서, 지금은 거의 푸리에 변환이라고 불러 둡니다."},
+
+  {"s": "i5", "at": ".ask", "t": "이 기계의 진짜 쓸모는 섞인 신호를 나누는 데 있습니다. 이번에는 2헤르츠와 3헤르츠를 더한 신호를 넣어 보겠습니다. 감긴 그래프는 훨씬 복잡해집니다."},
+  {"s": "i5", "at": ".stage", "t": "감는 진동수를 0부터 5까지 훑어 보겠습니다. 2를 지날 때 한 번, 3을 지날 때 또 한 번 무게중심이 오른쪽으로 끌려가고, 봉우리 두 개가 생깁니다.", "a": [["click", "#sigW3 [data-sig=\"c23\"]"], ["ensure", "#swW3", false], ["range", "fW3", 0, 300], ["wait", 400], ["ensure", "#swW3", true]]},
+  {"s": "i5", "at": ".stage", "t": "세 진동을 서로 다른 세기로 섞으면 봉우리 높이도 세기를 따라갑니다. 가장 센 3헤르츠의 봉우리가 가장 높습니다.", "a": [["ensure", "#swW3", false], ["click", "#sigW3 [data-sig=\"c235\"]"], ["range", "fW3", 300, 1200]]},
+  {"s": "i5", "at": ".prose", "i": 1, "t": "왜 섞여 있어도 나눌 수 있을까요? 무게중심은 평균이고, 더한 것의 평균은 평균끼리 더한 것과 같습니다. 그래서 섞인 신호의 무게중심은 성분마다 따로 구한 무게중심의 합입니다. 감는 진동수가 2일 때 3헤르츠 성분은 흩어져 상쇄되므로 거의 0이고, 3일 때는 2헤르츠 성분이 거의 0이니, 두 봉우리가 서로를 방해하지 않습니다."},
+  {"s": "i5", "at": ".stage", "i": 1, "t": "그림으로 확인하면, 2헤르츠를 변환한 것과 3헤르츠를 변환한 것을 더한 결과가, 두 신호를 먼저 더한 뒤 변환한 결과와 정확히 같습니다. 이 성질을 선형성이라고 부릅니다."},
+  {"s": "i5", "at": ".ex", "t": "예제의 답은 2와 3과 4.5에 봉우리 세 개이고, 높이는 각 성분 세기의 절반입니다. 진동수가 맞을 때 오른쪽 성분은 코사인 제곱의 모양이 되는데, 코사인 제곱의 평균이 2분의 1이기 때문입니다.", "a": [["open"]]},
+
+  {"s": "i6", "at": ".ask", "t": "이제 이 기계를 식으로 써 보겠습니다. 지금까지는 무게중심의 x좌표만 보았지만, 무게중심은 평면 위의 점이라 y좌표도 있습니다. 평면 위의 점을 한 덩어리로 다루는 가장 좋은 방법이 복소수입니다. 가로를 실수, 세로를 허수로 보는 복소평면입니다."},
+  {"s": "i6", "at": ".key", "t": "복소수를 쓰면 회전이 곱셈 하나로 끝납니다. 오일러 공식에 따르면, 이의 아이 세타 제곱은 반지름 1인 원 위에서 세타만큼 돌아간 점입니다. 세타는 라디안으로 재고, 한 바퀴는 원 둘레의 길이와 같은 2파이입니다."},
+  {"s": "i6", "at": ".stage", "t": "세타 자리에 2파이 티를 넣으면 1초에 한 바퀴 도는 화살표가 됩니다. 여기에 진동수 에프를 곱하면 1초에 에프 바퀴를 돕니다. 지금 화살표는 1초에 반 바퀴씩, 시계 반대 방향으로 돌고 있습니다.", "a": [["click", "#rotA"], ["click", "#sgnP"], ["range", "fRot", 50, 500], ["ensure", "#pRot", true]]},
+  {"s": "i6", "at": ".stage", "t": "지수 앞에 마이너스를 붙이면 도는 방향이 시계 방향으로 바뀝니다. 푸리에 변환에서는 관례로 이 시계 방향을 씁니다.", "a": [["click", "#sgnM"]]},
+  {"s": "i6", "at": ".key", "i": 2, "t": "이 회전 화살표에 신호 지 오브 티를 곱하면, 길이 1이던 화살표가 매 순간 신호의 세기만큼 늘었다 줄었다 합니다. 2장에서 손으로 정한 감기 규칙 두 가지가 곱셈 한 번으로 합쳐진 것입니다."},
+  {"s": "i6", "at": ".stage", "t": "감는 진동수를 3에 맞추고 시간을 흘려보내면, 화살표 끝이 2장에서 본 한쪽으로 쏠린 감긴 그래프를 그대로 그립니다.", "a": [["click", "#rotB"], ["range", "fRot", 300, 1200]]},
+
+  {"s": "i7", "at": ".ask", "t": "무게중심은 어떻게 계산할까요? 컴퓨터처럼 생각해 보면, 시각을 N개 골라 그때마다 감긴 그래프 위의 점을 구하고, 그 복소수들을 모두 더해 N으로 나누면 됩니다. 점들의 평균 위치입니다.", "a": [["ensure", "#pRot", false]]},
+  {"s": "i7", "at": ".stage", "t": "그림의 보라색 점들이 고른 시각의 점이고, 주황 십자가 그 점들의 평균, 분홍 점이 정확한 무게중심입니다. 점이 12개일 때는 둘이 조금 떨어져 있습니다.", "a": [["range", "fAvg", 300, 600], ["range", "nAvg", 12, 800]]},
+  {"s": "i7", "at": ".stage", "t": "점을 9개로 줄여 보겠습니다. 점 사이 간격이 0.5초인데, 그동안 신호가 한 번 반을 오르내려 봉우리를 건너뛰어 버립니다. 평균이 엉뚱한 곳으로 갑니다.", "a": [["range", "nAvg", 9, 900]]},
+  {"s": "i7", "at": ".stage", "t": "이번엔 점을 200개로 늘립니다. 주황 십자와 분홍 점이 거의 겹칩니다.", "a": [["range", "nAvg", 200, 2000]]},
+  {"s": "i7", "at": ".key", "i": 1, "t": "점의 개수를 한없이 늘리면, 더해서 개수로 나누는 계산은 적분해서 구간의 길이로 나누는 계산이 됩니다. 함수의 평균값을 적분으로 구하는 방법 그대로입니다. 복소수를 적분하는 것도 실수부와 허수부를 따로 적분할 뿐이고, 이 식이 가리키는 것은 결국 감긴 그래프의 무게중심 하나입니다."},
+
+  {"s": "i8", "at": ".ask", "t": "이제 진짜 푸리에 변환과의 마지막 차이를 보겠습니다. 실제 정의에는 구간의 길이로 나누는 부분이 없습니다. 무게중심 그 자체가 아니라, 무게중심에 구간의 길이를 곱한 값입니다."},
+  {"s": "i8", "at": ".parts", "t": "공식을 부분별로 읽어 보겠습니다. 이의 마이너스 2파이 아이 에프 티는 1초에 에프 바퀴 도는 화살표입니다. 거기에 지 오브 티를 곱한 것이 감긴 그래프이고, 적분은 그 위의 점들을 모두 더한 것입니다. 결과인 지 햇 오브 에프는 시간 대신 진동수를 넣는 새 함수로, 그 진동수가 신호에 얼마나 세게 들어 있는지를 복소수 하나로 돌려줍니다."},
+  {"s": "i8", "at": ".stage", "t": "나누지 않으면 무엇이 달라지는지 보겠습니다. 위쪽은 2헤르츠 신호이고, 초록 띠가 관찰하는 구간입니다. 아래쪽은 감는 진동수에 따른 결과입니다. 지금 구간은 2초이고, 2에서의 봉우리 높이는 1입니다.", "a": [["click", "#durF"], ["range", "tDur", 20, 600]]},
+  {"s": "i8", "at": ".stage", "t": "구간을 6초로 늘려 보겠습니다. 봉우리는 세 배인 3으로 높아지고, 동시에 폭은 3분의 1로 좁아집니다.", "a": [["range", "tDur", 60, 2500]]},
+  {"s": "i8", "at": ".stage", "t": "세로축을 무게중심으로 바꾸면, 높이는 언제나 0.5로 같고 폭만 달라집니다. 구간을 1초로 줄이면 봉우리가 뭉툭하게 넓어집니다. 짧게 보면 진동수가 흐릿해지고, 길게 볼수록 또렷해지는 것입니다.", "a": [["click", "#durC"], ["wait", 600], ["range", "tDur", 10, 2500]]},
+  {"s": "i8", "at": ".stage", "t": "정리하면, 진동수가 맞으면 신호가 오래 이어질수록 값이 계속 커지고, 맞지 않으면 원을 돌며 상쇄되어 일정한 크기를 넘지 않습니다. 그리고 구간을 그대로 잘라 쓴 이 경우, 봉우리 양옆 첫 0 사이의 폭은 2 나누기 관찰 시간입니다. 봉우리의 높이는 신호의 단위와 진폭, 관찰 시간에 따라 달라지므로 다른 진동수와 비교하는 상대적인 세기로 읽어야 합니다. 관찰이 짧을수록 넓어진다는 이 사실이 뒤에서 무선의 대역폭 이야기로 이어집니다.", "a": [["click", "#durF"], ["range", "tDur", 20, 800]]},
+  {"s": "i8", "at": ".prose", "i": 1, "t": "이론에서는 적분 구간을 음의 무한대부터 양의 무한대까지 잡기도 하는데, 구간을 한없이 넓힐 때의 극한을 뜻합니다. 그리고 진동수마다의 세기를 알면 거꾸로 원래 신호를 다시 만들 수 있습니다. 진동수마다 그 세기만큼의 회전 화살표를 모두 더하는 것으로, 역 푸리에 변환이라고 합니다. 지수의 부호만 플러스로 바뀝니다."},
+  {"s": "i8", "at": ".ex", "t": "예제를 풀면, 2헤르츠 신호를 3초 동안 볼 때 봉우리 높이는 0.5 곱하기 3으로 1.5, 폭은 2 나누기 3으로 약 0.67헤르츠입니다. 6초 동안 보면 높이는 3, 폭은 0.33헤르츠입니다.", "a": [["open"]]},
+
+  {"s": "r1", "at": ".ask", "t": "이제 무선으로 넘어갑니다. 수신기가 밴드에 섞인 수많은 신호 가운데 한 국만 골라내는 원리가, 방금 만든 감는 기계와 똑같습니다."},
+  {"s": "r1", "at": ".terms", "t": "수신기 안에는 국부발진기가 있습니다. 수신기가 스스로 만드는 진동으로, 다이얼을 돌리면 이 진동수가 바뀝니다. 믹서는 안테나에서 들어온 신호에 이 국부발진기를 곱합니다. 회전 화살표를 곱하는 일, 곧 감기입니다. 그 뒤의 저역통과 필터는 빠르게 오르내리는 성분을 걸러 내고 느린 변화만 남깁니다. 평균 내기, 곧 무게중심을 구하는 일입니다."},
+  {"s": "r1", "at": ".readas", "t": "회전 화살표는 코사인과 사인 두 부분으로 되어 있으므로, 실제 회로에서는 코사인을 곱하는 믹서와 사인을 곱하는 믹서를 나란히 둡니다. 두 출력을 아이와 큐라고 부르는데, 바로 무게중심의 x좌표와 y좌표입니다. 그리고 다이얼은 감는 진동수입니다."},
+  {"s": "r1", "at": ".stage", "t": "그림의 위쪽은 7메가헤르츠 대의 밴드입니다. A, B, C 세 국이 보이고, 분홍 바늘이 다이얼, 분홍 띠가 필터를 통과하는 범위입니다. 지금 다이얼은 A국보다 600헤르츠 아래에 있습니다. 아래 왼쪽의 화살표가 무게중심, 곧 아이와 큐입니다.", "a": [["click", "#rxFull"], ["select", "bwRx", "500"], ["range", "dRx", 1140, 800]]},
+  {"s": "r1", "at": ".stage", "t": "다이얼이 600헤르츠 어긋나 있으니, 감는 화살표가 신호보다 1초에 600바퀴 덜 돕니다. 그래서 무게중심이 멈춰 있지 못하고 1초에 600바퀴씩 돌아갑니다. 그림은 눈으로 볼 수 있게 400배 느리게 그렸습니다. 이 회전을 소리로 내면 600헤르츠의 삐 소리, 곧 CW의 비트음입니다."},
+  {"s": "r1", "at": ".stage", "t": "필터를 넓혀 두고, 다이얼을 A국 쪽으로 천천히 옮겨 보겠습니다. 회전이 느려지고 비트음도 낮아집니다. 다이얼과 상대국이 정확히 일치하면 무게중심은 한자리에 멈추고 소리가 사라집니다. 이것이 제로 비트입니다.", "a": [["click", "#rxZoom"], ["select", "bwRx", "6000"], ["range", "dRx", 1200, 3500]]},
+  {"s": "r1", "at": ".stage", "t": "이번엔 다이얼을 A국보다 600헤르츠 위로 옮겨 보겠습니다. 소리 높이는 아까와 같은 600헤르츠지만, 무게중심은 반대인 시계 방향으로 돕니다.", "a": [["range", "dRx", 1260, 2000]]},
+  {"s": "r1", "at": ".prose", "i": 1, "t": "여기서 큐가 왜 필요한지 드러납니다. 아이, 곧 x좌표만 보면 시계 방향으로 돌든 반대로 돌든 똑같이 코사인 모양으로 오르내립니다. 상대국이 다이얼보다 위에 있는지 아래에 있는지 구별할 수 없습니다. y좌표인 큐까지 있어야 회전 방향을 알 수 있고, 그래서 SDR은 아이와 큐 두 갈래를 씁니다."},
+  {"s": "r1", "at": ".stage", "t": "실제 CW 필터는 이 구별을 이용해 다이얼보다 위쪽, 600헤르츠 둘레만 통과시킵니다. CW 필터로 돌아가면 다이얼보다 아래에 있는 A국은 걸러져 S미터가 떨어집니다. 다이얼을 다시 600헤르츠 아래로 내리면 A국이 필터 안으로 들어옵니다.", "a": [["select", "bwRx", "500"], ["wait", 1800], ["range", "dRx", 1140, 1500]]},
+  {"s": "r1", "at": ".stage", "t": "필터를 SSB용 2.4킬로헤르츠로 넓히면, A국보다 450헤르츠 위에 붙어 있는 B국도 함께 들어옵니다. 두 무게중심이 서로 다른 빠르기로 돌며 더해져 화살표가 흔들리고, 소리로는 두 음이 겹쳐 들립니다. 좁은 필터가 왜 필요한지 보여 주는 장면입니다.", "a": [["select", "bwRx", "2400"]]},
+  {"s": "r1", "at": ".prose", "i": 2, "t": "요즘 무전기는 신호를 먼저 중간주파수로 옮긴 뒤 같은 일을 하거나, SDR처럼 안테나 신호를 곧바로 아이와 큐로 만듭니다. 어느 쪽이든 국부발진기를 곱해 감고, 필터로 평균 낸다는 뼈대는 같습니다.", "a": [["select", "bwRx", "500"]]},
+
+  {"s": "r2", "at": ".ask", "t": "수신기 하나는 감는 진동수 하나에서 무게중심 하나를 봅니다. 밴드스코프는 감는 진동수를 수백 개 한꺼번에 놓고, 진동수마다의 크기를 가로로 늘어놓아 그립니다. 2장에서 그린 세 번째 그래프와 같은 그림입니다."},
+  {"s": "r2", "at": ".prose", "t": "SDR은 안테나 신호를 일정한 간격으로 재서 숫자로 바꾼 다음, 점 N개로 어림한 무게중심을 감는 진동수마다 계산합니다. 이것이 이산 푸리에 변환이고, 그 계산을 아주 빠르게 해내는 방법이 에프 에프 티, 빠른 푸리에 변환입니다. 점이 N개면 진동수 칸도 N개 생기고, 칸 사이 간격은 1초에 재는 횟수를 N으로 나눈 값입니다."},
+  {"s": "r2", "at": ".stage", "t": "그림은 14.074메가헤르츠에 맞춘 수신기의 소리를 에프 에프 티로 그린 화면입니다. 위쪽 선이 방금 계산한 한 번의 결과, 곧 밴드스코프이고, 아래쪽은 그 결과를 한 줄씩 색으로 칠해 아래로 흘려보낸 워터폴입니다. 가로는 진동수, 세로는 시간, 밝기는 세기입니다.", "a": [["ensure", "#pWf", true]]},
+  {"s": "r2", "at": ".stage", "t": "여기서는 1초에 6000번 재고 1024점마다 계산하므로, 칸 간격은 약 5.9헤르츠이고 한 줄은 0.17초입니다. 15초마다 켜졌다 꺼지는 좁은 막대들이 FT8 신호이고, 800헤르츠 근처에서 끊어졌다 이어지는 줄이 CW입니다."},
+  {"s": "r2", "at": ".prose", "i": 1, "t": "3장에서 점이 너무 드물면 봉우리를 건너뛴다는 것을 보았습니다. SDR에서도 1초에 재는 횟수가 신호 진동수의 두 배보다 적으면, 높은 진동수가 낮은 진동수인 척 끼어듭니다. 이것을 앨리어싱이라 하고, 그래서 SDR은 받으려는 대역폭보다 두 배 넘게 빨리 잽니다."},
+
+  {"s": "r3", "at": ".ask", "t": "3장에서 관찰 구간이 짧을수록 봉우리가 넓어진다는 것을 보았습니다. 이 사실은 무선에서 대역폭의 규칙이 됩니다. 신호가 이어지는 시간이 짧으면, 진동수가 아무리 정확해도 진동수 쪽으로 넓게 퍼집니다.", "a": [["ensure", "#pWf", false]]},
+  {"s": "r3", "at": ".prose", "t": "CW의 점 하나는 반송파를 잠깐 켰다 끈 짧은 신호입니다. 점의 길이는 1200을 분당 단어 수로 나눈 밀리초여서, 20WPM이면 60밀리초입니다. 빨리 칠수록 신호가 짧아지고, 그만큼 차지하는 대역이 넓어집니다."},
+  {"s": "r3", "at": ".stage", "t": "그림의 위쪽은 점 세 개의 세기, 아래쪽은 그 신호의 진동수 분포를 데시벨로 그린 것입니다. 20WPM에서 가운데 봉우리의 폭은 2 나누기 0.06초, 약 33헤르츠입니다.", "a": [["click", "#bwHard"], ["range", "wpmBw", 20, 600]]},
+  {"s": "r3", "at": ".stage", "t": "속도를 40WPM으로 올리면 점이 절반으로 짧아지고, 가운데 봉우리는 두 배로 넓어집니다.", "a": [["range", "wpmBw", 40, 2000]]},
+  {"s": "r3", "at": ".stage", "t": "이번엔 가장자리를 보겠습니다. 반송파를 순간적으로 켜고 끄면, 봉우리 양옆으로 넓은 치맛자락이 마이너스 40데시벨 근처에서 500헤르츠 바깥까지 이어집니다. 이웃 주파수에서 딱딱 들리는 키 클릭입니다.", "a": [["range", "wpmBw", 20, 1200]]},
+  {"s": "r3", "at": ".stage", "t": "켜고 끄는 가장자리를 5밀리초에 걸쳐 부드럽게 바꾸면 치맛자락이 급하게 떨어집니다. 그래서 송신기는 키잉 파형을 부드럽게 다듬습니다.", "a": [["click", "#bwSoft"]]},
+  {"s": "r3", "at": ".ex", "t": "FT8 예제입니다. 심볼 하나가 0.16초이므로, 이웃 톤과 구별하려면 1 나누기 0.16, 곧 6.25헤르츠의 간격이 필요합니다. 한 톤의 봉우리는 중심에서 6.25헤르츠 떨어진 곳에서 처음 0이 됩니다. 이웃 톤의 중심을 바로 그 자리에 두면 서로 간섭하지 않는데, 이것을 직교성이라 합니다. 그래서 FT8의 톤 간격은 6.25헤르츠입니다. 톤 8개 중심의 가장 낮은 것과 가장 높은 것 사이는 7칸, 곧 43.75헤르츠이고, 바깥으로 퍼지는 몫까지 더해 점유 대역폭은 통상 약 50헤르츠로 봅니다. 심볼을 길게 잡은 덕분에 좁은 폭으로 약한 신호를 주고받습니다.", "a": [["open"]]},
+
+  {"s": "r4", "at": ".ask", "t": "AM 신호를 감는 기계에 넣으면 무엇이 나올까요? 시간 그래프로는 반송파 하나가 커졌다 작아졌다 하는 모양인데, 진동수 쪽에서는 봉우리가 셋으로 갈라집니다."},
+  {"s": "r4", "at": ".key", "t": "이유는 삼각함수의 곱을 합으로 바꾸는 공식에 있습니다. 코사인 두 개의 곱은, 두 진동수를 더한 코사인과 뺀 코사인을 합한 것의 절반입니다. AM 신호에 적용하면 반송파 하나와, 그 위아래로 음의 진동수만큼 떨어진 두 진동이 나옵니다. 위쪽을 윗측파대, 아래쪽을 아랫측파대라고 합니다."},
+  {"s": "r4", "at": ".stage", "t": "그림에서 음의 진동수를 바꿔 보면 두 측파대가 반송파에서 그만큼 떨어져 움직입니다. 그래서 AM 신호의 폭은 가장 높은 음의 두 배입니다.", "a": [["click", "#modeAm [data-mode=\"am\"]"], ["range", "fmAm", 10, 500], ["wait", 300], ["range", "fmAm", 25, 1800], ["range", "fmAm", 10, 1200]]},
+  {"s": "r4", "at": ".stage", "t": "반송파에는 정보가 없고, 두 측파대는 같은 정보를 나눠 가집니다. 반송파를 없애면 DSB, 거기서 한쪽 측파대까지 버리면 SSB입니다. SSB는 폭이 절반이고 송신 전력을 모두 정보에 씁니다. 시간 그래프에서는 한 가지 진동만 남아 세기가 일정해집니다.", "a": [["click", "#modeAm [data-mode=\"dsb\"]"], ["wait", 2800], ["click", "#modeAm [data-mode=\"usb\"]"]]},
+  {"s": "r4", "at": ".ex", "t": "예제에서 음성을 3킬로헤르츠로 제한하면 AM은 6킬로헤르츠, SSB는 3킬로헤르츠를 차지합니다. 7.200메가헤르츠 USB에서 3킬로헤르츠 음은 7.203메가헤르츠에 나옵니다.", "a": [["open"]]},
+
+  {"s": "r5", "at": ".ask", "t": "마지막은 노치 필터입니다. 교신 중에 누군가 튜닝하는 반송파가 끼어들면, 시간 그래프에서는 음성과 방해음이 뒤엉켜 구별되지 않습니다. 하지만 푸리에 변환을 하면 방해음은 한 진동수에 우뚝 선 좁은 봉우리로 드러납니다.", "a": [["ensure", "#nfOn", false]]},
+  {"s": "r5", "at": ".stage", "t": "그림의 아래쪽에서 일정한 간격으로 늘어선 봉우리들이 음성의 배음이고, 1755헤르츠에 홀로 솟은 것이 방해음입니다."},
+  {"s": "r5", "at": ".stage", "t": "노치 필터는 그 봉우리가 있는 칸 몇 개만 0으로 만든 뒤, 역 푸리에 변환으로 시간 그래프를 다시 만듭니다. 필터를 켜면 방해음 봉우리가 사라지고 음성의 배음은 그대로 남습니다. 음성은 넓은 진동수에 퍼져 있어서, 좁은 칸 몇 개를 지워도 거의 손상되지 않습니다.", "a": [["ensure", "#nfOn", true]]},
+  {"s": "r5", "at": ".stage", "t": "변환하고, 지우고, 되돌리는 이 세 단계가 DSP 무전기의 노치 필터의 뼈대이고, 일부 잡음 감소 방식도 같은 뼈대를 씁니다. 소리 듣기 버튼으로 필터를 켠 소리와 끈 소리를 비교해 볼 수 있습니다."},
+
+  {"s": "sum", "at": "h2", "t": "정리하겠습니다. 푸리에 변환은 신호를 원에 감고, 감긴 그래프의 무게중심을 보고, 거기에 관찰한 시간의 길이를 곱한 것입니다. 감는 빠르기가 신호 속 진동과 맞을 때만 그 진동이 한쪽으로 몰려 큰 값이 나옵니다."},
+  {"s": "sum", "at": ".table-wrap", "t": "무선에서 다이얼은 감는 진동수, 믹서는 회전 화살표를 곱하는 일, 아이와 큐는 무게중심의 두 좌표, 저역통과 필터는 평균 내기입니다. 밴드스코프와 워터폴은 에프 에프 티의 그림이고, 키 클릭과 측파대, 노치 필터도 모두 같은 그림으로 설명됩니다. 무전기는 이 일을 매 순간 하고 있습니다."}
+];
+
+</script>
+<script>
+/* ---------- 블로그(iframe) 삽입: 높이·보이는 범위 주고받기 (antenna-types 규약) ---------- */
+(function(){
+  if (window.self === window.top) return;
+  var last = 0, on = false;
+  function send(force){
+    if (!on) return;
+    var h = Math.ceil(document.documentElement.scrollHeight);
+    if (!force && Math.abs(h - last) < 2) return;
+    last = h;
+    try { window.parent.postMessage({type: 'antenna-types:height', height: h}, '*'); } catch(e){}
+  }
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'antenna-types:ping'){
+      var first = !on;
+      if (!on){ on = true; window.__embedOn = true; document.documentElement.classList.add('embedded'); }
+      send(true);
+      if (first) setTimeout(jumpHash, 200);
+    } else if (d.type === 'antenna-types:viewport'){
+      window.__embedView = {top: +d.top || 0, height: +d.height || 0};
+      document.dispatchEvent(new Event('embedview'));
+    }
+  });
+  if ('ResizeObserver' in window) new ResizeObserver(function(){ send(false); }).observe(document.body);
+  window.addEventListener('load', function(){ send(true); });
+  /* 목차 링크(#i5 등): 블로그 화면을 그 자리로 옮깁니다 */
+  function scrollToEl(el){
+    var v = window.__embedView, H = v && v.height ? v.height : 800;
+    var y = el.getBoundingClientRect().top + window.scrollY - 70 + H / 2;
+    try { window.parent.postMessage({type: 'antenna-types:scrollto', y: y, smooth: true}, '*'); } catch(e){}
+  }
+  function jumpHash(){
+    var t = location.hash && document.getElementById(location.hash.slice(1));
+    if (t) scrollToEl(t);
+    else if (document.referrer && document.referrer.indexOf(location.host) >= 0) scrollToEl(document.body);
+  }
+  document.addEventListener('click', function(e){
+    if (!window.__embedOn) return;
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
+    var t = document.getElementById(a.getAttribute('href').slice(1)); if (!t) return;
+    e.preventDefault(); scrollToEl(t);
+  });
+})();
+</script>
+<script>
+/* ---------- 듣기: 기기 음성(Web Speech API) · 조작 ['ensure', 선택자, 켬/끔]: 버튼이 그 상태가 아닐 때만 누름 ---------- */
+(function(){
+  const S = window.speechSynthesis;
+  const hero = document.querySelector('.hero');
+  const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+  const placeHero = box => { const h1 = hero && hero.querySelector('h1'); if (h1) h1.insertAdjacentElement('afterend', box); else if (hero) hero.appendChild(box); };
+
+  if (!S || !window.SpeechSynthesisUtterance){
+    /* 앱 안 브라우저(카카오톡·안드로이드 WebView 등)에는 음성 기능이 없습니다: 버튼은 두고, 이유와 브라우저로 여는 방법을 보여 줍니다 */
+    if (!hero) return;
+    const url = location.href.split('#')[0];
+    const android = /Android/i.test(navigator.userAgent);
+    const openHref = android ? 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end' : url;
+    const box = mk('div', 'listen');
+    const btn = mk('button', 'narr-all', '<span class="ic" aria-hidden="true">▶</span>처음부터 듣기'); btn.type = 'button';
+    const note = mk('span', 'narr-note', '기기 음성으로 읽고, 읽는 곳으로 화면이 따라갑니다.');
+    const msg = mk('div', 'narr-unsup', '<p>이 앱 화면에서는 듣기 기능을 쓸 수 없습니다. 크롬이나 사파리 같은 브라우저에서 열면 들을 수 있습니다.</p>' +
+      '<div class="unsup-actions"><a class="btnlink" target="_blank" rel="noopener">브라우저에서 열기</a><button type="button" class="alt">주소 복사</button></div>');
+    msg.hidden = true;
+    msg.querySelector('a').href = openHref;
+    const cp = msg.querySelector('button');
+    cp.addEventListener('click', () => {
+      const done = () => { cp.textContent = '복사했습니다'; };
+      const legacy = () => {
+        const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', '');
+        t.style.position = 'absolute'; t.style.left = '-9999px'; document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); done(); } catch(e){ cp.textContent = url; }
+        document.body.removeChild(t);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, legacy); else legacy();
+    });
+    btn.addEventListener('click', () => { msg.hidden = !msg.hidden; });
+    box.appendChild(btn); box.appendChild(note); box.appendChild(msg); placeHero(box);
+    return;
+  }
+  const emb = () => !!window.__embedOn;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 대본 (window.NARR) → 화면 위치 ---------- */
+  const PAGE = document.getElementById('i1') ? 'M' : 'H';
+  function resolve(sec, sel, idx){
+    const root = sec === 'hero' ? document.querySelector('.hero') : document.getElementById(sec);
+    if (!root) return null;
+    if (!sel) return root;
+    return root.querySelectorAll(sel)[idx || 0] || root;
+  }
+  const items = (window.NARR || []).filter(n => !n.pg || n.pg === PAGE).map(n => ({sec: n.s, el: resolve(n.s, n.at, n.i), text: n.t, acts: n.a || []})).filter(it => it.el);
+  if (!items.length) return;
+  function splitSentences(t){ return t.replace(/([.?!])\s+/g, '$1\u0001').split('\u0001').map(x => x.trim()).filter(Boolean); }
+  items.forEach(it => it.parts = splitSentences(it.text));
+
+  /* ---------- 대본이 그림을 조작하기 ---------- */
+  const anims = {};
+  function animRange(id, to, ms){
+    const el = document.getElementById(id); if (!el) return;
+    cancelAnimationFrame(anims[id]);
+    const from = +el.value, t0 = performance.now(), dur = reduce ? 0 : (ms || 1500);
+    const stepF = now => {
+      const u = dur ? Math.min(1, (now - t0) / dur) : 1, e = u < .5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2) / 2;
+      el.value = Math.round(from + (to - from) * e); el.dispatchEvent(new Event('input', {bubbles: true}));
+      if (u < 1) anims[id] = requestAnimationFrame(stepF);
+    };
+    anims[id] = requestAnimationFrame(stepF);
+  }
+  let pending = [];
+  function runActs(it, list){
+    /* list가 없으면 마디 시작 조작, 있으면 문장 시작 조작(['at', 문장 번호, [...]]) */
+    if (!list) list = it.acts.filter(a => a[0] !== 'at');
+    const secEl = it.sec === 'hero' ? null : document.getElementById(it.sec);
+    const cmp = secEl && secEl.querySelector('.cmp');
+    const C = cmp && cmp._cmp;
+    let delay = 0;
+    list.forEach(a => {
+      const run = () => {
+        if (a[0] === 'side' && C){ C.set(0); C.clear(); C.hl(a[1]); }
+        else if (a[0] === 'hl' && C){ C.set(0); C.hl(a[1]); }
+        else if (a[0] === 'play' && C){ C.play(C.D0); }
+        else if (a[0] === 'reset' && C){ C.set(0); C.clear(); C.hl(null); }
+        else if (a[0] === 'mark' && C){ C.mark(a[1], a[2], a[3], a[4], a[5]); }
+        else if (a[0] === 'clear' && C){ C.clear(); }
+        else if (a[0] === 'pair' && C){ C.pair(a[1]); }
+        else if (a[0] === 'range') animRange(a[1], a[2], a[3]);
+        else if (a[0] === 'select'){ const el = document.getElementById(a[1]); if (el){ el.value = a[2]; el.dispatchEvent(new Event('change', {bubbles: true})); } }
+        else if (a[0] === 'click'){ const b = document.querySelector(a[1]); if (b) b.click(); }
+        else if (a[0] === 'ensure'){ const b = document.querySelector(a[1]); if (b){ const cur = b.getAttribute('aria-pressed') === 'true' || b.dataset.on === '1'; if (cur !== a[2]) b.click(); } }
+        else if (a[0] === 'open'){ const d = it.el.matches('details') ? it.el : it.el.querySelector('details'); if (d) d.open = true; }
+      };
+      /* 슬라이더를 연달아 옮기는 조작은 앞의 것이 끝난 뒤에 */
+      if (a[0] === 'wait'){ delay += a[1]; return; }
+      if (delay){ pending.push(setTimeout(run, delay)); } else run();
+      if (a[0] === 'range') delay += (reduce ? 0 : (a[3] || 1500)) + 100;
+    });
+  }
+  function secLabel(sec){
+    if (sec === 'hero') return '머리말';
+    const el = document.getElementById(sec);
+    if (!el) return sec;
+    const no = el.querySelector(':scope > h3 .no');
+    if (no) return no.textContent.trim();
+    const tag = el.querySelector('.tag');
+    return tag ? tag.textContent.trim() : sec;
+  }
+
+  /* ---------- 목소리 고르기 ---------- */
+  let voice = null;
+  function pickVoice(){
+    const vs = S.getVoices().filter(v => /^ko(-|_|$)/i.test(v.lang));
+    if (!vs.length){ voice = null; return; }
+    const score = v => (/natural|neural|online/i.test(v.name) ? 4 : 0) + (/google/i.test(v.name) ? 2 : 0) + (/yuna|sunhi|heami|injoon|hyunsu|jimin/i.test(v.name) ? 1 : 0);
+    voice = vs.slice().sort((a, b) => score(b) - score(a))[0];
+  }
+  pickVoice();
+  if (typeof S.addEventListener === 'function') S.addEventListener('voiceschanged', pickVoice); else S.onvoiceschanged = pickVoice;
+  try { S.cancel(); } catch(e){}
+
+  /* ---------- 화면 ---------- */
+  const heroBox = mk('div', 'listen');
+  const allBtn = mk('button', 'narr-all', '<span class="ic" aria-hidden="true">▶</span>처음부터 듣기'); allBtn.type = 'button';
+  heroBox.appendChild(allBtn); heroBox.appendChild(mk('span', 'narr-note', '기기 음성으로 읽고, 읽는 곳으로 화면이 따라갑니다.'));
+  placeHero(heroBox);
+
+  [...document.querySelectorAll('.item')].forEach(itemEl => {
+    const sec = itemEl.id, h3 = itemEl.querySelector(':scope > h3');
+    const idx = items.findIndex(x => x.sec === sec);
+    if (!h3 || idx < 0) return;
+    const b = mk('button', 'alt narr-sec', '<span class="ic" aria-hidden="true">▶</span>이 항목 듣기'); b.type = 'button';
+    b.addEventListener('click', () => start(items.findIndex(x => x.sec === sec), sec));
+    h3.insertAdjacentElement('afterend', b);
+  });
+
+  const bar = mk('div', 'narr-bar');
+  bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', '낭독 재생');
+  bar.hidden = true;
+  bar.innerHTML =
+    '<div class="nb-info"><span class="nb-sec"></span><span class="nb-pos"></span></div>' +
+    '<div class="nb-ctrl">' +
+      '<button type="button" class="alt nb-prev" aria-label="이전 문단">⏮</button>' +
+      '<button type="button" class="nb-play" aria-label="일시정지">❚❚</button>' +
+      '<button type="button" class="alt nb-next" aria-label="다음 문단">⏭</button>' +
+      '<label class="nb-rate">속도 <select class="nb-rsel"><option value="0.8">0.8×</option><option value="0.9">0.9×</option><option value="1" selected>1.0×</option><option value="1.1">1.1×</option><option value="1.2">1.2×</option></select></label>' +
+      '<button type="button" class="alt nb-close" aria-label="낭독 닫기">✕</button>' +
+    '</div>' +
+    '<div class="nb-msg" hidden></div>';
+  document.body.appendChild(bar);
+  function placeBar(){
+    if (!emb() || bar.hidden) return;
+    const v = window.__embedView; if (!v) return;
+    const bh = bar.offsetHeight || 64, dh = document.documentElement.scrollHeight;
+    bar.style.top = Math.max(0, Math.min(dh - bh, v.top + v.height - bh)) + 'px';
+  }
+  document.addEventListener('embedview', placeBar);
+  const $ = s => bar.querySelector(s);
+  const secEl = $('.nb-sec'), posEl = $('.nb-pos'), playBtn = $('.nb-play'), rateSel = $('.nb-rsel'), msgEl = $('.nb-msg');
+
+  /* ---------- 읽기 ---------- */
+  let i = 0, k = 0, gen = 0, playing = false, onlySec = null, active = null, curUtter = null;
+  /* 예약된 그림 조작과 슬라이더 애니메이션을 모두 멈춥니다 (일시정지·닫기·문단 이동 때) */
+  function stopActs(){ pending.forEach(clearTimeout); pending = []; Object.keys(anims).forEach(id => cancelAnimationFrame(anims[id])); }
+  function setActive(el, it){
+    if (active) active.classList.remove('narr-on');
+    active = el;
+    stopActs();
+    if (!el) return;
+    el.classList.add('narr-on');
+    if (it){ const d = reduce ? 0 : 450; it._baseAt = performance.now() + d; pending.push(setTimeout(() => runActs(it), d)); }
+    const r = el.getBoundingClientRect();
+    if (emb()){
+      const v = window.__embedView, H = v && v.height ? v.height : window.innerHeight;
+      const off = Math.max(56, H * 0.1);
+      const y = r.top + window.scrollY - off + H / 2;
+      try { window.parent.postMessage({type: 'antenna-types:scrollto', y: y, smooth: !reduce}, '*'); } catch(e){}
+    } else {
+      const off = Math.max(56, window.innerHeight * 0.1);
+      window.scrollTo({top: Math.max(0, r.top + window.scrollY - off), behavior: reduce ? 'auto' : 'smooth'});
+    }
+  }
+  function updateBar(){
+    const it = items[i];
+    secEl.textContent = secLabel(it.sec);
+    const same = items.filter(x => x.sec === it.sec);
+    posEl.textContent = (same.indexOf(it) + 1) + ' / ' + same.length;
+    playBtn.textContent = playing ? '❚❚' : '▶';
+    playBtn.setAttribute('aria-label', playing ? '일시정지' : '재생');
+  }
+  function showMsg(t){ msgEl.textContent = t; msgEl.hidden = !t; }
+  function speakPart(g){
+    if (g !== gen || !playing) return;
+    const it = items[i];
+    if (k >= it.parts.length){
+      const n = i + 1;
+      if (n < items.length && (!onlySec || items[n].sec === onlySec)){ i = n; k = 0; setActive(items[i].el, items[i]); updateBar(); speakPart(g); }
+      else finish();
+      return;
+    }
+    it.acts.forEach(a => { if (a[0] === 'at' && a[1] === k && k > 0){ const w = Math.max(0, (it._baseAt || 0) - performance.now()) + 20; pending.push(setTimeout(() => runActs(it, a[2]), w)); } });
+    const u = new SpeechSynthesisUtterance(it.parts[k]);
+    curUtter = u;   /* 크롬 계열에서 읽는 도중 객체가 치워져 onend가 사라지는 일을 막습니다 */
+    u.lang = 'ko-KR';
+    if (voice) u.voice = voice;
+    u.rate = +rateSel.value;
+    u.onend = () => { if (g !== gen) return; k++; speakPart(g); };
+    u.onerror = e => { if (g !== gen) return; if (e && (e.error === 'interrupted' || e.error === 'canceled')) return; k++; speakPart(g); };
+    S.speak(u);
+  }
+  function go(){ gen++; try { S.cancel(); } catch(e){} playing = true; updateBar(); speakPart(gen); }
+  function start(idx, sec){
+    if (idx < 0) return;
+    pickVoice();
+    bar.hidden = false; document.body.classList.add('narr-open');
+    bar.classList.toggle('emb', emb());
+    if (emb()){ try { window.parent.postMessage({type: 'antenna-types:needview'}, '*'); } catch(e){} placeBar(); }
+    if (!voice && S.getVoices().length){
+      showMsg('이 브라우저에는 한국어 음성이 없어 읽을 수 없습니다. 엣지, 크롬, 사파리에서 열어 보십시오.');
+      playing = false; i = idx; updateBar(); return;
+    }
+    showMsg('');
+    onlySec = sec || null; i = idx; k = 0;
+    setActive(items[i].el, items[i]);
+    go();
+  }
+  function pause(){ playing = false; gen++; stopActs(); try { S.cancel(); } catch(e){} updateBar(); }
+  function finish(){ playing = false; gen++; updateBar(); setActive(null); }
+  function close(){ pause(); setActive(null); document.querySelectorAll('.cmp').forEach(c => { if (c._cmp && c._cmp.hl) c._cmp.hl(null); }); bar.hidden = true; document.body.classList.remove('narr-open'); showMsg(''); }
+  function jump(d){
+    const n = Math.max(0, Math.min(items.length - 1, i + d));
+    if (onlySec && items[n].sec !== onlySec) onlySec = items[n].sec;
+    i = n; k = 0; setActive(items[i].el, items[i]); go();
+  }
+  allBtn.addEventListener('click', () => start(0, null));
+  playBtn.addEventListener('click', () => { if (playing) pause(); else { if (!active) setActive(items[i].el, items[i]); go(); } });
+  $('.nb-prev').addEventListener('click', () => jump(k > 0 ? 0 : -1));
+  $('.nb-next').addEventListener('click', () => jump(1));
+  $('.nb-close').addEventListener('click', close);
+  rateSel.addEventListener('change', () => { if (playing) go(); });
+  window.addEventListener('pagehide', () => { try { S.cancel(); } catch(e){} });
+})();
+</script>
+<script>
+/* ---------- 좁은 화면에서 긴 수식 맞추기 ----------
+   1) 넘치면 줄을 나눈 형태로 다시 그립니다(\qquad·⟹ 앞에서 줄바꿈 → 그래도 넘치면 = 앞에서 줄바꿈)
+   2) 그래도 넘치면 글자를 조금 줄이고(최소 80%), 마지막으로 가로 스크롤 */
+(function(){
+  function topSplit(tex, re){
+    /* 중괄호 밖에서만 나눕니다 */
+    const out = []; let depth = 0, last = 0, m; const rx = new RegExp(re.source, 'g');
+    const depthAt = []; for (let i = 0, d = 0; i < tex.length; i++){ if (tex[i] === '{' && tex[i-1] !== '\\') d++; else if (tex[i] === '}' && tex[i-1] !== '\\') d--; depthAt[i] = d; }
+    const lr = []; /* \left ... \right 안도 피함 */
+    let lvl = 0; const inLR = []; for (let i = 0; i < tex.length; i++){ if (tex.startsWith('\\left', i)) lvl++; if (tex.startsWith('\\right', i)) lvl--; inLR[i] = lvl; }
+    while ((m = rx.exec(tex))){ if (depthAt[m.index] === 0 && !inLR[m.index]) { out.push(tex.slice(last, m.index)); last = m.index + m[0].length; out.push(m[0]); } }
+    out.push(tex.slice(last));
+    return out;
+  }
+  function lines1(tex){
+    /* \qquad·\quad 묶음은 줄로, ⟹ 는 다음 줄 앞으로 */
+    const parts = topSplit(tex, /,?\s*\\qquad\s*(?:\\Longrightarrow\s*\\qquad)?|\\quad(?![a-z])|\\;\s*\\Longrightarrow\s*\\;|\\;\s*\\xrightarrow\{[^{}]*\}\s*\\;/);
+    const lines = []; let cur = '';
+    for (let i = 0; i < parts.length; i++){
+      if (i % 2 === 0) cur += parts[i];
+      else { lines.push(cur); const sep = parts[i]; cur = /Longrightarrow/.test(sep) ? '\\Longrightarrow\\; ' : (/xrightarrow/.test(sep) ? sep.replace(/^\\;\s*/, '') : ''); }
+    }
+    lines.push(cur);
+    return lines.map(x => x.trim().replace(/,$/, '')).filter(Boolean);
+  }
+  const gather = L => '\\begin{gathered}' + L.join(' \\\\[4pt] ') + '\\end{gathered}';
+  function eqSplit(line){
+    /* 긴 줄만 = 앞에서 줄바꿈 */
+    if (line.replace(/\\[a-zA-Z]+|[{}\s]/g, '').length < 14) return line;
+    const parts = topSplit(line, /=/);
+    if (parts.length < 3) return line;
+    const L = ['&' + parts[0]];
+    for (let i = 2; i < parts.length; i += 2) L.push('&= ' + parts[i]);
+    if (parts.length > 3){ L.shift(); L[0] = parts[0] + L[0]; }
+    return '\\begin{aligned}' + L.join(' \\\\ ') + '\\end{aligned}';
+  }
+  function level1(tex){ const L = lines1(tex); return L.length > 1 ? gather(L) : null; }
+  function level2(tex){ const L = lines1(tex).map(eqSplit); const t = L.length > 1 ? gather(L) : L[0]; return t === tex ? null : t; }
+  const tooWide = c => { const s = c.querySelector('svg'); return s && s.getBoundingClientRect().width > c.clientWidth + 1; };
+  async function render(holder, tex){
+    MathJax.typesetClear([holder]);
+    holder.textContent = '\\[' + tex + '\\]';
+    await MathJax.typesetPromise([holder]);
+    return holder.querySelector('mjx-container');
+  }
+  let busy = false;
+  async function fit(){
+    if (busy || !window.MathJax || !MathJax.typesetPromise) return; busy = true;
+    try {
+      const doc = MathJax.startup.document;
+      for (const c of [...document.querySelectorAll('mjx-container[display="true"]')]){
+        if (!c.offsetWidth) continue;   /* 접힌 풀이 안은 펼칠 때 */
+        let holder = c.closest('.mfit');
+        if (!holder){
+          const item = doc.getMathItemsWithin(c)[0]; if (!item) continue;
+          holder = document.createElement('span'); holder.className = 'mfit'; holder.dataset.tex = item.math;
+          c.replaceWith(holder); holder.appendChild(c);
+        }
+        const tex = holder.dataset.tex;
+        let cont = holder.querySelector('mjx-container');
+        /* 넓은 화면으로 돌아오면 원래 모양부터 다시 */
+        if (holder.dataset.lv && holder.dataset.lv !== '0'){ cont = await render(holder, tex); holder.dataset.lv = '0'; }
+        cont.style.fontSize = ''; cont.style.textAlign = '';
+        if (!tooWide(cont)) continue;
+        const l1 = level1(tex), l2 = level2(tex);
+        for (const [lv, t] of [['1', l1], ['2', l2]]){
+          if (!t) continue;
+          cont = await render(holder, t); holder.dataset.lv = lv;
+          if (!tooWide(cont)) break;
+        }
+        if (tooWide(cont)){
+          const s = cont.querySelector('svg'), r = cont.clientWidth / s.getBoundingClientRect().width;
+          cont.style.fontSize = Math.max(80, Math.floor(r * 100)) + '%';
+          if (tooWide(cont)) cont.style.textAlign = 'left';
+        }
+      }
+    } finally { busy = false; }
+  }
+  window.__mathFit = fit;
+  let lastW = 0, tm = 0;
+  function onResize(){ const w = document.documentElement.clientWidth; if (Math.abs(w - lastW) < 8) return; lastW = w; clearTimeout(tm); tm = setTimeout(fit, 250); }
+  const start = () => MathJax.startup.promise.then(() => { lastW = document.documentElement.clientWidth; return fit(); });
+  if (window.MathJax && MathJax.startup && MathJax.startup.promise) start();
+  else window.addEventListener('load', () => { if (window.MathJax && MathJax.startup) start(); });
+  window.addEventListener('resize', onResize);
+  /* 풀이를 펼치면 그 안의 수식도 맞춤 */
+  document.addEventListener('toggle', e => { if (e.target.open) setTimeout(fit, 50); }, true);
+})();
+</script>
+</body>
+</html>
